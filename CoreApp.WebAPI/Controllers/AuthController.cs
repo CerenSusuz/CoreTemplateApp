@@ -1,6 +1,6 @@
-﻿using CoreApp.Application.DTOs.Auth;
-using CoreApp.Application.Features.Auth.Commands.Login;
+﻿using CoreApp.Application.Features.Auth.Commands.Login;
 using CoreApp.Application.Features.Auth.Commands.Register;
+using CoreApp.Application.Features.Auth.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

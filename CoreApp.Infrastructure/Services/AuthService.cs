@@ -1,5 +1,5 @@
-﻿using CoreApp.Application.DTOs.Auth;
-using CoreApp.Application.Interfaces.Auth;
+﻿using CoreApp.Application.Common.Interfaces.Auth;
+using CoreApp.Application.Features.Auth.DTOs;
 using CoreApp.Domain.Entities;
 using CoreApp.Infrastructure.Auth;
 using CoreApp.Infrastructure.Data;

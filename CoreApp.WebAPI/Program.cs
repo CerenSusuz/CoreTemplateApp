@@ -1,7 +1,7 @@
 using System.Reflection;
 using CoreApp.Application;
 using CoreApp.Application.Common.Behaviors;
-using CoreApp.Application.Interfaces.Auth;
+using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Infrastructure.Auth;
 using CoreApp.Infrastructure.Data;
 using CoreApp.Infrastructure.Services;
@@ -24,6 +24,8 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "CoreApp API", Version = "v1" });
 });
+
+builder.Services.AddHttpContextAccessor();
 
 // Register EF Core DbContext
 builder.Services.AddDbContext<CoreAppDbContext>(options =>

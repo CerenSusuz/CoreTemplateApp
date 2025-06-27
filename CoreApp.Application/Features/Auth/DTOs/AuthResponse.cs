@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CoreApp.Application.DTOs.Auth
+namespace CoreApp.Application.Features.Auth.DTOs
 {
     public class AuthResponse
     {
