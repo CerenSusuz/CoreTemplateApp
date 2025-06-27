@@ -2,10 +2,14 @@ using System.Reflection;
 using CoreApp.Application;
 using CoreApp.Application.Common.Behaviors;
 using CoreApp.Application.Interfaces.Auth;
+using CoreApp.Infrastructure.Auth;
+using CoreApp.Infrastructure.Data;
+using CoreApp.Infrastructure.Services;
 using CoreApp.WebAPI.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +25,16 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "CoreApp API", Version = "v1" });
 });
 
+// Register EF Core DbContext
+builder.Services.AddDbContext<CoreAppDbContext>(options =>
+    options.UseInMemoryDatabase("CoreAppDb"));
+
+// Bind JwtSettings from config
+builder.Services.Configure<JwtSettings>(
+    builder.Configuration.GetSection("JwtSettings"));
+
+// Register AuthService
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // MediatR
 builder.Services.AddMediatR(cfg =>
@@ -38,7 +52,7 @@ builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(Authorization
 // builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>)); // requires IUnitOfWork
 
 // Temporary Mock Auth Service
-builder.Services.AddScoped<IAuthService, MockAuthService>();
+//builder.Services.AddScoped<IAuthService, MockAuthService>();
 
 // ------------------------------------
 // App Build
