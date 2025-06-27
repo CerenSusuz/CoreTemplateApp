@@ -1,9 +1,12 @@
 ﻿using CoreApp.Application.Features.Profile.DTOs;
+using CoreApp.Application.Features.Profile.Queries;
+using CoreApp.Infrastructure.Data;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-namespace CoreApp.Application.Features.Profile.Queries;
+namespace CoreApp.Infrastructure.Features.Profile.Queries;
 
 public class GetProfileQueryHandler(CoreAppDbContext context, IHttpContextAccessor httpContextAccessor) : IRequestHandler<GetProfileQuery, ProfileDto>
 {
