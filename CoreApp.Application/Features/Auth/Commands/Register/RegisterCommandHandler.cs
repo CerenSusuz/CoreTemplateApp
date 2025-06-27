@@ -1,23 +1,17 @@
 ﻿using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Application.Features.Auth.DTOs;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace CoreApp.Application.Features.Auth.Commands.Register
+namespace CoreApp.Application.Features.Auth.Commands.Register;
+
+public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResponse>
 {
-    public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResponse>
+    private readonly IAuthService _authService;
+
+    public RegisterCommandHandler(IAuthService authService) => _authService = authService;
+
+    public async Task<AuthResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
-        private readonly IAuthService _authService;
-
-        public RegisterCommandHandler(IAuthService authService) => _authService = authService;
-
-        public async Task<AuthResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
-        {
-            return await _authService.RegisterAsync(request.Request);
-        }
+        return await _authService.RegisterAsync(request.Request);
     }
 }

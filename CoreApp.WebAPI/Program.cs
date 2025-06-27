@@ -1,14 +1,11 @@
 using System.Reflection;
-using CoreApp.Application;
 using CoreApp.Application.Common.Behaviors;
 using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Infrastructure.Auth;
 using CoreApp.Infrastructure.Data;
 using CoreApp.Infrastructure.Services;
-using CoreApp.WebAPI.Services;
 using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 

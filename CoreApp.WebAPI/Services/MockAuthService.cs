@@ -1,38 +1,37 @@
 ﻿using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Application.Features.Auth.DTOs;
 
-namespace CoreApp.WebAPI.Services
+namespace CoreApp.WebAPI.Services;
+
+public class MockAuthService : IAuthService
 {
-    public class MockAuthService : IAuthService
+    public Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        public Task<AuthResponse> LoginAsync(LoginRequest request)
+        return Task.FromResult(new AuthResponse
         {
-            return Task.FromResult(new AuthResponse
-            {
-                Token = "mock-jwt-token",
-                RefreshToken = "mock-refresh-token",
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
-            });
-        }
+            Token = "mock-jwt-token",
+            RefreshToken = "mock-refresh-token",
+            ExpiresAt = DateTime.UtcNow.AddHours(1)
+        });
+    }
 
-        public Task<AuthResponse> RegisterAsync(RegisterRequest request)
+    public Task<AuthResponse> RegisterAsync(RegisterRequest request)
+    {
+        return Task.FromResult(new AuthResponse
         {
-            return Task.FromResult(new AuthResponse
-            {
-                Token = "mock-jwt-token",
-                RefreshToken = "mock-refresh-token",
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
-            });
-        }
+            Token = "mock-jwt-token",
+            RefreshToken = "mock-refresh-token",
+            ExpiresAt = DateTime.UtcNow.AddHours(1)
+        });
+    }
 
-        public Task<AuthResponse> RefreshTokenAsync(string refreshToken)
+    public Task<AuthResponse> RefreshTokenAsync(string refreshToken)
+    {
+        return Task.FromResult(new AuthResponse
         {
-            return Task.FromResult(new AuthResponse
-            {
-                Token = "refreshed-jwt-token",
-                RefreshToken = "new-refresh-token",
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
-            });
-        }
+            Token = "refreshed-jwt-token",
+            RefreshToken = "new-refresh-token",
+            ExpiresAt = DateTime.UtcNow.AddHours(1)
+        });
     }
 }
