@@ -13,10 +13,10 @@ using System.Text;
 
 namespace CoreApp.Infrastructure.Services
 {
-    public class AuthService(CoreAppDbContext context, IOptions<JwtSettings> jwtOptions) : IAuthService
+    public class AuthService(CoreAppDbContext context, JwtSettings jwtOptions) : IAuthService
     {
         private readonly CoreAppDbContext _context = context;
-        private readonly JwtSettings _jwtSettings = jwtOptions.Value;
+        private readonly JwtSettings _jwtSettings = jwtOptions;
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
@@ -63,8 +63,8 @@ namespace CoreApp.Infrastructure.Services
         private async Task<AuthResponse> GenerateAuthResponseAsync(User user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
-            Console.WriteLine("[AuthService] JWT SECRET: " + _jwtSettings.SecretKey);
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.Secret);
+            Console.WriteLine("[AuthService] JWT SECRET: " + _jwtSettings.Secret);
 
             var claims = new List<Claim>
             {

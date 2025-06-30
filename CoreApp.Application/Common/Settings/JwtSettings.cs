@@ -2,12 +2,10 @@
 {
     public class JwtSettings
     {
-        public string SecretKey { get; set; } = string.Empty;
-
-        public string Issuer { get; set; } = "CoreApp";
-
-        public string Audience { get; set; } = "CoreAppAPI";
-
-        public int ExpirationMinutes { get; set; } = 60;
+        public string Secret { get; set; } = string.Empty;
+        public string Issuer { get; set; } = string.Empty;
+        public string Audience { get; set; } = string.Empty;
+        public double ExpirationMinutes { get; set; }
     }
+
 }
