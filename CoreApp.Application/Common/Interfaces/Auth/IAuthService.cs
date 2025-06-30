@@ -1,11 +1,6 @@
-﻿using CoreApp.Application.DTOs.Auth;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CoreApp.Application.Features.Auth.DTOs;
 
-namespace CoreApp.Application.Interfaces.Auth
+namespace CoreApp.Application.Common.Interfaces.Auth
 {
     public interface IAuthService
     {

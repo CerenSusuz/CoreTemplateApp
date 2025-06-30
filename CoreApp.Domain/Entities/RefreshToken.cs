@@ -14,5 +14,4 @@ namespace CoreApp.Domain.Entities
 
         public User? User { get; set; }
     }
-
 }
