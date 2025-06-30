@@ -36,15 +36,20 @@ builder.Services.AddSwaggerGen(c =>
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
+{
     {
+        new OpenApiSecurityScheme
         {
-            new OpenApiSecurityScheme
+            Reference = new OpenApiReference
             {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-            },
-            Array.Empty<string>()
-        }
-    });
+                Type = ReferenceType.SecurityScheme,
+                Id = "Bearer"
+            }
+        },
+        Array.Empty<string>()
+    }
+});
+
 });
 
 builder.Services.AddHttpContextAccessor();
@@ -61,60 +66,55 @@ builder.Services.AddCors(options =>
 });
 
 // EF Core DbContext (InMemory - dev only)
+//builder.Services.AddDbContext<CoreAppDbContext>(options =>
+//    options.UseInMemoryDatabase("CoreAppDb"));
+
 builder.Services.AddDbContext<CoreAppDbContext>(options =>
-    options.UseInMemoryDatabase("CoreAppDb"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
 // Bind JwtSettings from config
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
 
-var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
-var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
-Console.WriteLine("[Program.cs] JWT SECRET: " + jwtSettings.SecretKey);
+var jwtSettings = builder.Configuration
+    .GetSection(nameof(JwtSettings))
+    .Get<JwtSettings>();
+
+builder.Services.AddSingleton(jwtSettings);
+
+
+var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
+Console.WriteLine("[Program.cs] JWT SECRET: " + jwtSettings.Secret);
+Console.WriteLine("[JWT SETTINGS]");
+Console.WriteLine("Issuer: " + jwtSettings.Issuer);
+Console.WriteLine("Audience: " + jwtSettings.Audience);
+Console.WriteLine("Secret: " + jwtSettings.Secret);
 
 // 🔐 JWT Authentication
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.RequireHttpsMetadata = false;
-    options.SaveToken = true;
-    options.TokenValidationParameters = new TokenValidationParameters
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings.Issuer,
-        ValidAudience = jwtSettings.Audience,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ClockSkew = TimeSpan.Zero
-    };
-
-    Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
-
-    // 🧪 Debug log
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            Console.WriteLine("[JWT ERROR] " + context.Exception.Message);
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
 
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            Console.WriteLine("[JWT OK] " + context.SecurityToken);
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
 
-            return Task.CompletedTask;
-        }
-    };
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
 
-});
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSettings.Secret))
+        };
+    });
 
+builder.Services.AddAuthorization();
 
 // Auth Service
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -152,9 +152,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRouting();
 app.UseCors("AllowAll");
 
-app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
