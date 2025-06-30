@@ -2,7 +2,7 @@
 using System.Text;
 using CoreApp.Application.Common.Behaviors;
 using CoreApp.Application.Common.Interfaces.Auth;
-using CoreApp.Infrastructure.Auth;
+using CoreApp.Application.Common.Settings;
 using CoreApp.Infrastructure.Data;
 using CoreApp.Infrastructure.Services;
 using FluentValidation;
@@ -49,6 +49,17 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
 // EF Core DbContext (InMemory - dev only)
 builder.Services.AddDbContext<CoreAppDbContext>(options =>
     options.UseInMemoryDatabase("CoreAppDb"));
@@ -58,7 +69,8 @@ builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
-var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
+var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
+Console.WriteLine("[Program.cs] JWT SECRET: " + jwtSettings.SecretKey);
 
 // 🔐 JWT Authentication
 builder.Services.AddAuthentication(options =>
@@ -68,7 +80,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = true;
+    options.RequireHttpsMetadata = false;
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -78,9 +90,31 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwtSettings.Issuer,
         ValidAudience = jwtSettings.Audience,
-        IssuerSigningKey = new SymmetricSecurityKey(key)
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ClockSkew = TimeSpan.Zero
     };
+
+    Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
+
+    // 🧪 Debug log
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine("[JWT ERROR] " + context.Exception.Message);
+
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine("[JWT OK] " + context.SecurityToken);
+
+            return Task.CompletedTask;
+        }
+    };
+
 });
+
 
 // Auth Service
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -118,9 +152,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication(); // 🔑 middleware eklendi
-app.UseAuthorization();
+app.UseCors("AllowAll");
 
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

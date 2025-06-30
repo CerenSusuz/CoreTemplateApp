@@ -1,7 +1,7 @@
 ﻿using CoreApp.Application.Common.Interfaces.Auth;
+using CoreApp.Application.Common.Settings;
 using CoreApp.Application.Features.Auth.DTOs;
 using CoreApp.Domain.Entities;
-using CoreApp.Infrastructure.Auth;
 using CoreApp.Infrastructure.Data;
 using CoreApp.Infrastructure.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -11,94 +11,96 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace CoreApp.Infrastructure.Services;
-
-public class AuthService(CoreAppDbContext context, IOptions<JwtSettings> jwtOptions) : IAuthService
+namespace CoreApp.Infrastructure.Services
 {
-    private readonly CoreAppDbContext _context = context;
-    private readonly JwtSettings _jwtSettings = jwtOptions.Value;
-
-    public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
+    public class AuthService(CoreAppDbContext context, IOptions<JwtSettings> jwtOptions) : IAuthService
     {
-        if (await _context.Users.AnyAsync(u => u.Email == request.Email))
-            throw new Exception("User already exists");
+        private readonly CoreAppDbContext _context = context;
+        private readonly JwtSettings _jwtSettings = jwtOptions.Value;
 
-        var user = new User
+        public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
-            Email = request.Email,
-            Username = request.Username,
-            PasswordHash = PasswordHasher.Hash(request.Password),
-        };
+            if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+                throw new Exception("User already exists");
 
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+            var user = new User
+            {
+                Email = request.Email,
+                Username = request.Username,
+                PasswordHash = PasswordHasher.Hash(request.Password),
+            };
 
-        return await GenerateAuthResponseAsync(user);
-    }
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
 
-    public async Task<AuthResponse> LoginAsync(LoginRequest request)
-    {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-        if (user == null || !PasswordHasher.Verify(request.Password, user.PasswordHash))
-            throw new Exception("Invalid credentials");
+            return await GenerateAuthResponseAsync(user);
+        }
 
-        return await GenerateAuthResponseAsync(user);
-    }
-
-    public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
-    {
-        var token = await _context.RefreshTokens
-            .Include(rt => rt.User)
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken && !rt.IsRevoked);
-
-        if (token == null || token.Expires < DateTime.UtcNow)
-            throw new Exception("Invalid or expired refresh token");
-
-        token.IsRevoked = true;
-        await _context.SaveChangesAsync();
-
-        return await GenerateAuthResponseAsync(token.User!);
-    }
-
-    private async Task<AuthResponse> GenerateAuthResponseAsync(User user)
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
-
-        var claims = new List<Claim>
+        public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Email, user.Email)
-        };
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+            if (user == null || !PasswordHasher.Verify(request.Password, user.PasswordHash))
+                throw new Exception("Invalid credentials");
 
-        var tokenDescriptor = new SecurityTokenDescriptor
+            return await GenerateAuthResponseAsync(user);
+        }
+
+        public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
         {
-            Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes),
-            Issuer = _jwtSettings.Issuer,
-            Audience = _jwtSettings.Audience,
-            SigningCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-        };
+            var token = await _context.RefreshTokens
+                .Include(rt => rt.User)
+                .FirstOrDefaultAsync(rt => rt.Token == refreshToken && !rt.IsRevoked);
 
-        var token = tokenHandler.CreateToken(tokenDescriptor);
+            if (token == null || token.Expires < DateTime.UtcNow)
+                throw new Exception("Invalid or expired refresh token");
 
-        var refresh = new RefreshToken
+            token.IsRevoked = true;
+            await _context.SaveChangesAsync();
+
+            return await GenerateAuthResponseAsync(token.User!);
+        }
+
+        private async Task<AuthResponse> GenerateAuthResponseAsync(User user)
         {
-            Token = Guid.NewGuid().ToString(),
-            Expires = DateTime.UtcNow.AddDays(7),
-            UserId = user.Id
-        };
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
+            Console.WriteLine("[AuthService] JWT SECRET: " + _jwtSettings.SecretKey);
 
-        _context.RefreshTokens.Add(refresh);
-        await _context.SaveChangesAsync();
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new(ClaimTypes.Name, user.Username),
+                new(ClaimTypes.Email, user.Email)
+            };
 
-        return new AuthResponse
-        {
-            Token = tokenHandler.WriteToken(token),
-            RefreshToken = refresh.Token,
-            ExpiresAt = tokenDescriptor.Expires!.Value
-        };
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes),
+                Issuer = _jwtSettings.Issuer,
+                Audience = _jwtSettings.Audience,
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+
+            var refresh = new RefreshToken
+            {
+                Token = Guid.NewGuid().ToString(),
+                Expires = DateTime.UtcNow.AddDays(7),
+                UserId = user.Id
+            };
+
+            _context.RefreshTokens.Add(refresh);
+            await _context.SaveChangesAsync();
+
+            return new AuthResponse
+            {
+                Token = tokenHandler.WriteToken(token),
+                RefreshToken = refresh.Token,
+                ExpiresAt = tokenDescriptor.Expires!.Value
+            };
+        }
     }
 }

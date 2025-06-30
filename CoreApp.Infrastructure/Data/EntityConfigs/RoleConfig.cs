@@ -2,13 +2,14 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 
-namespace CoreApp.Infrastructure.Data.EntityConfigs;
-
-public class RoleConfig : IEntityTypeConfiguration<Role>
+namespace CoreApp.Infrastructure.Data.EntityConfigs
 {
-    public void Configure(EntityTypeBuilder<Role> builder)
+    public class RoleConfig : IEntityTypeConfiguration<Role>
     {
-        builder.HasKey(x => x.Id);
-        builder.Property(x => x.Name).IsRequired().HasMaxLength(50);
+        public void Configure(EntityTypeBuilder<Role> builder)
+        {
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Name).IsRequired().HasMaxLength(50);
+        }
     }
 }

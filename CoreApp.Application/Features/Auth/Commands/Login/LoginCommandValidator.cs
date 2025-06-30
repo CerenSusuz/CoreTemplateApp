@@ -1,17 +1,18 @@
 ﻿using FluentValidation;
 
-namespace CoreApp.Application.Features.Auth.Commands.Login;
-
-public class LoginCommandValidator : AbstractValidator<LoginCommand>
+namespace CoreApp.Application.Features.Auth.Commands.Login
 {
-    public LoginCommandValidator()
+    public class LoginCommandValidator : AbstractValidator<LoginCommand>
     {
-        RuleFor(x => x.Request.Email)
-            .NotEmpty()
-            .EmailAddress();
+        public LoginCommandValidator()
+        {
+            RuleFor(x => x.Request.Email)
+                .NotEmpty()
+                .EmailAddress();
 
-        RuleFor(x => x.Request.Password)
-            .NotEmpty()
-            .MinimumLength(6);
+            RuleFor(x => x.Request.Password)
+                .NotEmpty()
+                .MinimumLength(6);
+        }
     }
 }

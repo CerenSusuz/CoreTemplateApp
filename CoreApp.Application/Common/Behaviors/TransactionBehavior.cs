@@ -1,47 +1,48 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace CoreApp.Application.Common.Behaviors;
-
-public interface IUnitOfWork
+namespace CoreApp.Application.Common.Behaviors
 {
-    Task BeginTransactionAsync();
-    Task CommitTransactionAsync();
-    Task RollbackTransactionAsync();
-}
-
-public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
-{
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<TransactionBehavior<TRequest, TResponse>> _logger;
-
-    public TransactionBehavior(IUnitOfWork unitOfWork, ILogger<TransactionBehavior<TRequest, TResponse>> logger)
+    public interface IUnitOfWork
     {
-        _unitOfWork = unitOfWork;
-        _logger = logger;
+        Task BeginTransactionAsync();
+        Task CommitTransactionAsync();
+        Task RollbackTransactionAsync();
     }
 
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : IRequest<TResponse>
     {
-        TResponse response;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<TransactionBehavior<TRequest, TResponse>> _logger;
 
-        try
+        public TransactionBehavior(IUnitOfWork unitOfWork, ILogger<TransactionBehavior<TRequest, TResponse>> logger)
         {
-            await _unitOfWork.BeginTransactionAsync();
-            response = await next();
-            await _unitOfWork.CommitTransactionAsync();
-        }
-        catch (Exception ex)
-        {
-            await _unitOfWork.RollbackTransactionAsync();
-            _logger.LogError(ex, "Transaction failed for {RequestType}", typeof(TRequest).Name);
-            throw;
+            _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
-        return response;
+        public async Task<TResponse> Handle(
+            TRequest request,
+            RequestHandlerDelegate<TResponse> next,
+            CancellationToken cancellationToken)
+        {
+            TResponse response;
+
+            try
+            {
+                await _unitOfWork.BeginTransactionAsync();
+                response = await next();
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogError(ex, "Transaction failed for {RequestType}", typeof(TRequest).Name);
+                throw;
+            }
+
+            return response;
+        }
     }
 }

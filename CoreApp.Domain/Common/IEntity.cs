@@ -1,6 +1,7 @@
-﻿namespace CoreApp.Domain.Common;
-
-public interface IEntity
+﻿namespace CoreApp.Domain.Common
 {
-    Guid Id { get; set; }
+    public interface IEntity
+    {
+        Guid Id { get; set; }
+    }
 }

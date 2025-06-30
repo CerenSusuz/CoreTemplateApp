@@ -1,21 +1,22 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace CoreApp.Infrastructure.Helpers;
-
-public static class PasswordHasher
+namespace CoreApp.Infrastructure.Helpers
 {
-    public static string Hash(string password)
+    public static class PasswordHasher
     {
-        using var sha256 = SHA256.Create();
-        var bytes = Encoding.UTF8.GetBytes(password);
-        var hash = sha256.ComputeHash(bytes);
+        public static string Hash(string password)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(password);
+            var hash = sha256.ComputeHash(bytes);
 
-        return Convert.ToBase64String(hash);
-    }
+            return Convert.ToBase64String(hash);
+        }
 
-    public static bool Verify(string password, string hashedPassword)
-    {
-        return Hash(password) == hashedPassword;
+        public static bool Verify(string password, string hashedPassword)
+        {
+            return Hash(password) == hashedPassword;
+        }
     }
 }

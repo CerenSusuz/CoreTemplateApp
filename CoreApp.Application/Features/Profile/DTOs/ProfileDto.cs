@@ -1,10 +1,11 @@
-﻿namespace CoreApp.Application.Features.Profile.DTOs;
-
-public class ProfileDto
+﻿namespace CoreApp.Application.Features.Profile.DTOs
 {
-    public Guid Id { get; set; }
+    public class ProfileDto
+    {
+        public Guid Id { get; set; }
 
-    public string Username { get; set; } = default!;
+        public string Username { get; set; } = default!;
 
-    public string Email { get; set; } = default!;
+        public string Email { get; set; } = default!;
+    }
 }

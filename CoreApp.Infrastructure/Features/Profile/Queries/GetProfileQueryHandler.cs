@@ -6,32 +6,33 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-namespace CoreApp.Infrastructure.Features.Profile.Queries;
-
-public class GetProfileQueryHandler(CoreAppDbContext context, IHttpContextAccessor httpContextAccessor) : IRequestHandler<GetProfileQuery, ProfileDto>
+namespace CoreApp.Infrastructure.Features.Profile.Queries
 {
-    private readonly CoreAppDbContext _context = context;
-    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
-
-    public async Task<ProfileDto> Handle(GetProfileQuery request, CancellationToken cancellationToken)
+    public class GetProfileQueryHandler(CoreAppDbContext context, IHttpContextAccessor httpContextAccessor) : IRequestHandler<GetProfileQuery, ProfileDto>
     {
-        var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        private readonly CoreAppDbContext _context = context;
+        private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
-        if (userId is null)
-            throw new UnauthorizedAccessException();
-
-        var user = await _context.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == Guid.Parse(userId), cancellationToken);
-
-        if (user is null)
-            throw new Exception("User not found");
-
-        return new ProfileDto
+        public async Task<ProfileDto> Handle(GetProfileQuery request, CancellationToken cancellationToken)
         {
-            Id = user.Id,
-            Email = user.Email,
-            Username = user.Username
-        };
+            var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId is null)
+                throw new UnauthorizedAccessException();
+
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == Guid.Parse(userId), cancellationToken);
+
+            if (user is null)
+                throw new Exception("User not found");
+
+            return new ProfileDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Username = user.Username
+            };
+        }
     }
 }

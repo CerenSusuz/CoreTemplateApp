@@ -1,12 +1,13 @@
 ﻿using CoreApp.Application.Features.Auth.DTOs;
 
-namespace CoreApp.Application.Common.Interfaces.Auth;
-
-public interface IAuthService
+namespace CoreApp.Application.Common.Interfaces.Auth
 {
-    Task<AuthResponse> RegisterAsync(RegisterRequest request);
+    public interface IAuthService
+    {
+        Task<AuthResponse> RegisterAsync(RegisterRequest request);
 
-    Task<AuthResponse> LoginAsync(LoginRequest request);
+        Task<AuthResponse> LoginAsync(LoginRequest request);
 
-    Task<AuthResponse> RefreshTokenAsync(string refreshToken);
+        Task<AuthResponse> RefreshTokenAsync(string refreshToken);
+    }
 }

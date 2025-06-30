@@ -2,16 +2,17 @@
 using CoreApp.Application.Features.Auth.DTOs;
 using MediatR;
 
-namespace CoreApp.Application.Features.Auth.Commands.Register;
-
-public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResponse>
+namespace CoreApp.Application.Features.Auth.Commands.Register
 {
-    private readonly IAuthService _authService;
-
-    public RegisterCommandHandler(IAuthService authService) => _authService = authService;
-
-    public async Task<AuthResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
+    public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResponse>
     {
-        return await _authService.RegisterAsync(request.Request);
+        private readonly IAuthService _authService;
+
+        public RegisterCommandHandler(IAuthService authService) => _authService = authService;
+
+        public async Task<AuthResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
+        {
+            return await _authService.RegisterAsync(request.Request);
+        }
     }
 }

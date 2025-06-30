@@ -1,18 +1,19 @@
 ﻿using FluentValidation;
 
-namespace CoreApp.Application.Features.Auth.Commands.Register;
-
-public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
+namespace CoreApp.Application.Features.Auth.Commands.Register
 {
-    public RegisterCommandValidator()
+    public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
     {
-        RuleFor(x => x.Request.Username)
-            .NotEmpty().WithMessage("Username is required.");
+        public RegisterCommandValidator()
+        {
+            RuleFor(x => x.Request.Username)
+                .NotEmpty().WithMessage("Username is required.");
 
-        RuleFor(x => x.Request.Email)
-            .NotEmpty().EmailAddress();
+            RuleFor(x => x.Request.Email)
+                .NotEmpty().EmailAddress();
 
-        RuleFor(x => x.Request.Password)
-            .NotEmpty().MinimumLength(6);
+            RuleFor(x => x.Request.Password)
+                .NotEmpty().MinimumLength(6);
+        }
     }
 }
