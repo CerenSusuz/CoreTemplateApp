@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using System.Runtime;
 using System.Text;
 using CoreApp.Application.Common.Behaviors;
 using CoreApp.Application.Common.Interfaces.AI;
@@ -15,7 +14,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using CoreApp.Application.Common.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -2,22 +2,21 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CoreApp.WebAPI.Controllers
+namespace CoreApp.WebAPI.Controllers;
+
+[Route("api/ai")]
+[ApiController]
+public class AiController : ControllerBase
 {
-    [Route("api/ai")]
-    [ApiController]
-    public class AiController : ControllerBase
+    private readonly IMediator _mediator;
+
+    public AiController(IMediator mediator) => _mediator = mediator;
+
+    [HttpPost("prompt")]
+    public async Task<IActionResult> Prompt([FromBody] PromptTextCommand command)
     {
-        private readonly IMediator _mediator;
+        var result = await _mediator.Send(command);
 
-        public AiController(IMediator mediator) => _mediator = mediator;
-
-        [HttpPost("prompt")]
-        public async Task<IActionResult> Prompt([FromBody] PromptTextCommand command)
-        {
-            var result = await _mediator.Send(command);
-
-            return Ok(new { result });
-        }
+        return Ok(new { result });
     }
 }

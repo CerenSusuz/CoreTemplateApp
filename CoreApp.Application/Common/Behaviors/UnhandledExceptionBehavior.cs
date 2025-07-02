@@ -1,32 +1,31 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace CoreApp.Application.Common.Behaviors
+namespace CoreApp.Application.Common.Behaviors;
+
+public class UnhandledExceptionBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : IRequest<TResponse>
 {
-    public class UnhandledExceptionBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-        where TRequest : IRequest<TResponse>
+    private readonly ILogger<UnhandledExceptionBehavior<TRequest, TResponse>> _logger;
+
+    public UnhandledExceptionBehavior(ILogger<UnhandledExceptionBehavior<TRequest, TResponse>> logger)
     {
-        private readonly ILogger<UnhandledExceptionBehavior<TRequest, TResponse>> _logger;
+        _logger = logger;
+    }
 
-        public UnhandledExceptionBehavior(ILogger<UnhandledExceptionBehavior<TRequest, TResponse>> logger)
+    public async Task<TResponse> Handle(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
+    {
+        try
         {
-            _logger = logger;
+            return await next();
         }
-
-        public async Task<TResponse> Handle(
-            TRequest request,
-            RequestHandlerDelegate<TResponse> next,
-            CancellationToken cancellationToken)
+        catch (Exception ex)
         {
-            try
-            {
-                return await next();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unhandled exception for request {Request}", typeof(TRequest).Name);
-                throw;
-            }
+            _logger.LogError(ex, "Unhandled exception for request {Request}", typeof(TRequest).Name);
+            throw;
         }
     }
 }
