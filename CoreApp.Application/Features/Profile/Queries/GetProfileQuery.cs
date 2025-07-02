@@ -2,10 +2,9 @@
 using CoreApp.Application.Features.Profile.DTOs;
 using MediatR;
 
-namespace CoreApp.Application.Features.Profile.Queries
+namespace CoreApp.Application.Features.Profile.Queries;
+
+public class GetProfileQuery : IRequest<ProfileDto>, IAuthorizedRequest
 {
-    public class GetProfileQuery : IRequest<ProfileDto>, IAuthorizedRequest
-    {
-    
-    }
+
 }

@@ -1,14 +1,17 @@
 ﻿using System.Reflection;
 using System.Text;
 using CoreApp.Application.Common.Behaviors;
+using CoreApp.Application.Common.Interfaces.AI;
 using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Application.Common.Settings;
+using CoreApp.Infrastructure.AI;
 using CoreApp.Infrastructure.Data;
 using CoreApp.Infrastructure.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -20,6 +23,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.Configure<AISettings>(builder.Configuration.GetSection("AiSettings"));
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<IOptions<AISettings>>().Value);
+
+builder.Services.AddScoped<OpenRouterAiService>();
+builder.Services.AddScoped<OllamaAiService>();
+builder.Services.AddScoped<IAIService, AiServiceResolver>();
+
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+    .AddUserSecrets<Program>();
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -118,6 +135,7 @@ builder.Services.AddAuthorization();
 
 // Auth Service
 builder.Services.AddScoped<IAuthService, AuthService>();
+
 
 // MediatR
 builder.Services.AddMediatR(cfg =>

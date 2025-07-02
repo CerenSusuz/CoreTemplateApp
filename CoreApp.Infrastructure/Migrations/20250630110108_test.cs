@@ -2,21 +2,20 @@
 
 #nullable disable
 
-namespace CoreApp.Infrastructure.Migrations
+namespace CoreApp.Infrastructure.Migrations;
+
+/// <inheritdoc />
+public partial class test : Migration
 {
     /// <inheritdoc />
-    public partial class test : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
 
-        }
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
 
-        }
     }
 }

@@ -1,30 +1,29 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace CoreApp.Application.Common.Behaviors
+namespace CoreApp.Application.Common.Behaviors;
+
+public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : IRequest<TResponse>
 {
-    public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-        where TRequest : IRequest<TResponse>
+    private readonly ILogger<LoggingBehavior<TRequest, TResponse>> _logger;
+
+    public LoggingBehavior(ILogger<LoggingBehavior<TRequest, TResponse>> logger)
     {
-        private readonly ILogger<LoggingBehavior<TRequest, TResponse>> _logger;
+        _logger = logger;
+    }
 
-        public LoggingBehavior(ILogger<LoggingBehavior<TRequest, TResponse>> logger)
-        {
-            _logger = logger;
-        }
+    public async Task<TResponse> Handle(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Handling request: {RequestType}", typeof(TRequest).Name);
 
-        public async Task<TResponse> Handle(
-            TRequest request,
-            RequestHandlerDelegate<TResponse> next,
-            CancellationToken cancellationToken)
-        {
-            _logger.LogInformation("Handling request: {RequestType}", typeof(TRequest).Name);
+        var response = await next();
 
-            var response = await next();
+        _logger.LogInformation("Handled request: {RequestType}", typeof(TRequest).Name);
 
-            _logger.LogInformation("Handled request: {RequestType}", typeof(TRequest).Name);
-
-            return response;
-        }
+        return response;
     }
 }
