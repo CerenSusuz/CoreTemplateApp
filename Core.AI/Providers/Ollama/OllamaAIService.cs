@@ -3,41 +3,53 @@ using System.Text.Json;
 using Core.AI.Abstractions;
 using Core.AI.Config;
 using Core.AI.Models;
-using Microsoft.Extensions.Options;
 
-namespace Core.AI.Providers;
+namespace Core.AI.Providers.Ollama;
 
 public class OllamaAiService : IAIService
 {
     private readonly HttpClient _httpClient;
-    private readonly AISettings _settings;
+    private readonly AIModelProviderResolver _modelResolver;
 
-    public OllamaAiService(IOptions<AISettings> settings)
+    public OllamaAiService(AIModelProviderResolver modelResolver)
     {
+        _modelResolver = modelResolver;
         _httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:11434/") };
-        _settings = settings.Value;
     }
 
     public async Task<string> PromptAsync(string prompt, AIRequestOptions? options = null)
     {
+        var model = options?.Model ?? "mistral";
+
         var requestBody = new
         {
-            model = _settings.Model,
-            prompt = prompt,
+            model,
+            prompt,
             stream = false
         };
 
         var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
-
         var response = await _httpClient.PostAsync("api/generate", content);
         var responseString = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
             return $"[ERROR]: Ollama API Error - {response.StatusCode}";
 
-        using var doc = JsonDocument.Parse(responseString);
+        try
+        {
+            using var doc = JsonDocument.Parse(responseString);
+            return doc.RootElement.GetProperty("response").GetString() ?? string.Empty;
+        }
+        catch
+        {
+            return "[Ollama response parse error]";
+        }
+    }
 
-        return doc.RootElement.GetProperty("response").GetString() ?? "[Ollama response missing]";
+    public async Task<bool> IsModelSupportedAsync(string model)
+    {
+        var provider = _modelResolver.Resolve(AIProvider.Ollama);
+        var models = await provider.GetAvailableModelsAsync();
+        return models.Contains(model);
     }
 }
-

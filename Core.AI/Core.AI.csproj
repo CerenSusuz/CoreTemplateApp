@@ -9,10 +9,10 @@
 		<Version>1.1.0</Version>
 		<Authors>Ceren Susuz</Authors>
 		<Company>Ceren Susuz</Company>
-		<Product>Core.AI</Product>
-		<Description>Strategy-based modular AI service with support for OpenRouter and Ollama.</Description>
-		<PackageTags>AI;OpenAI;OpenRouter;Ollama;Strategy;MediatR;CleanArchitecture</PackageTags>
-		<RepositoryUrl>https://github.com/your-repo/CoreApp</RepositoryUrl>
+		<Product>CoreTemplate.AI</Product>
+		<Description>Modular, strategy-based AI abstraction layer with support for OpenRouter and Ollama, including dynamic model validation and runtime switching.</Description>
+		<PackageTags>AI;OpenRouter;Ollama;ChatGPT;MediatR;CQRS;CleanArchitecture</PackageTags>
+		<RepositoryUrl>https://github.com/CerenSusuz/CoreTemplateApp</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	</PropertyGroup>

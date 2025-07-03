@@ -1,8 +1,11 @@
 ﻿using System.Reflection;
 using System.Text;
 using Core.AI.Abstractions;
+using Core.AI.Commands;
 using Core.AI.Config;
 using Core.AI.Providers;
+using Core.AI.Providers.Ollama;
+using Core.AI.Providers.OpenRouter;
 using CoreApp.Application.Common.Behaviors;
 using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Application.Common.Settings;
@@ -22,14 +25,23 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 // --- AI Services ---
-builder.Services.Configure<AISettings>(builder.Configuration.GetSection("AiSettings"));
+builder.Services.AddOptions<AISettings>()
+    .Bind(builder.Configuration.GetSection("AiSettings"))
+    .Validate(settings => Enum.IsDefined(typeof(AIProvider), settings.Provider),
+        "Invalid AI provider configured in AiSettings.Provider");
+
 builder.Services.AddSingleton(sp =>
     sp.GetRequiredService<IOptions<AISettings>>().Value);
 
+// Providers
 builder.Services.AddScoped<OpenRouterAiService>();
 builder.Services.AddScoped<OllamaAiService>();
 builder.Services.AddScoped<IAIService, AIServiceResolver>();
 
+// Model Providers
+builder.Services.AddScoped<OpenRouterModelProvider>();
+builder.Services.AddScoped<OllamaModelProvider>();
+builder.Services.AddScoped<AIModelProviderResolver>();
 
 builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -99,7 +111,6 @@ var jwtSettings = builder.Configuration
 
 builder.Services.AddSingleton(jwtSettings);
 
-
 var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
 Console.WriteLine("[Program.cs] JWT SECRET: " + jwtSettings.Secret);
 Console.WriteLine("[JWT SETTINGS]");
@@ -139,6 +150,11 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(Assembly.Load("CoreApp.Application")));
 
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(PromptTextCommandHandler).Assembly);
+});
+
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(Assembly.Load("CoreApp.Application"));
 
@@ -150,11 +166,7 @@ builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavi
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
 // builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
 
-// App Build
-
 var app = builder.Build();
-
-// Middleware
 
 if (app.Environment.IsDevelopment())
 {
@@ -169,6 +181,7 @@ app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

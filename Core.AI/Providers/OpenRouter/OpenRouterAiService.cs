@@ -1,38 +1,42 @@
-﻿using System.Text;
+﻿using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
-using System.Net.Http.Headers;
 using Core.AI.Abstractions;
+using Core.AI.Config;
 using Core.AI.Models;
 using Microsoft.Extensions.Configuration;
-using Core.AI.Config;
-using Microsoft.Extensions.Options;
 
-namespace Core.AI.Providers;
+namespace Core.AI.Providers.OpenRouter;
 
 public class OpenRouterAiService : IAIService
 {
     private readonly string _apiKey;
     private readonly HttpClient _httpClient;
-    private readonly AISettings _settings;
+    private readonly AIModelProviderResolver _modelResolver;
 
-    public OpenRouterAiService(IConfiguration config, IOptions<AISettings> settings)
+    public OpenRouterAiService(
+        AIModelProviderResolver modelResolver,
+        IConfiguration config)
     {
         _apiKey = config["OpenAI:ApiKey"]!;
-        _settings = settings.Value;
+        _modelResolver = modelResolver;
 
         _httpClient = new HttpClient
         {
             BaseAddress = new Uri("https://openrouter.ai/api/v1/")
         };
+
         _httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", _apiKey);
     }
 
     public async Task<string> PromptAsync(string prompt, AIRequestOptions? options = null)
     {
+        var model = options?.Model ?? "mistralai/mistral-7b-instruct";
+
         var requestBody = new
         {
-            model = _settings.Model,
+            model,
             messages = new[]
             {
                 new { role = "system", content = options?.Context ?? "You are a helpful assistant." },
@@ -48,11 +52,24 @@ public class OpenRouterAiService : IAIService
         var responseString = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
-            return $"[ERROR]: API Error - {response.StatusCode}";
+            return $"[ERROR]: OpenRouter API Error - {response.StatusCode}";
 
-        using var doc = JsonDocument.Parse(responseString);
-        var contentElement = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content");
+        try
+        {
+            using var doc = JsonDocument.Parse(responseString);
+            var choices = doc.RootElement.GetProperty("choices");
+            return choices[0].GetProperty("message").GetProperty("content").GetString() ?? string.Empty;
+        }
+        catch
+        {
+            return "[OpenRouter response parse error]";
+        }
+    }
 
-        return contentElement.GetString() ?? "[AI response missing]";
+    public async Task<bool> IsModelSupportedAsync(string model)
+    {
+        var provider = _modelResolver.Resolve(AIProvider.OpenRouter);
+        var models = await provider.GetAvailableModelsAsync();
+        return models.Contains(model);
     }
 }

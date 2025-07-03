@@ -1,6 +1,9 @@
 ﻿using Core.AI.Abstractions;
+using Core.AI.Config;
 using Core.AI.Models;
-using Microsoft.Extensions.Configuration;
+using Core.AI.Providers.Ollama;
+using Core.AI.Providers.OpenRouter;
+using Microsoft.Extensions.Options;
 
 namespace Core.AI.Providers;
 
@@ -9,19 +12,20 @@ public class AIServiceResolver : IAIService
     private readonly IAIService _activeService;
 
     public AIServiceResolver(
-        IConfiguration config,
+        IOptions<AISettings> settings,
         OpenRouterAiService openRouterService,
         OllamaAiService ollamaService)
     {
-        var provider = config["AiSettings:Provider"]?.ToLower();
-
-        _activeService = provider switch
+        _activeService = settings.Value.Provider switch
         {
-            "ollama" => ollamaService,
+            AIProvider.Ollama => ollamaService,
             _ => openRouterService
         };
     }
 
     public Task<string> PromptAsync(string prompt, AIRequestOptions? options = null)
         => _activeService.PromptAsync(prompt, options);
+
+    public Task<bool> IsModelSupportedAsync(string model)
+        => _activeService.IsModelSupportedAsync(model);
 }
