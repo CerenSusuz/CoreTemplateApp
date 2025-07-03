@@ -1,4 +1,4 @@
-﻿namespace CoreApp.Application.Common.Settings;
+﻿namespace Core.AI.Config;
 
 public class AISettings
 {

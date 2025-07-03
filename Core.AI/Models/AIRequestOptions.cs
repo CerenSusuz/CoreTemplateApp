@@ -1,6 +1,6 @@
-﻿namespace CoreApp.Application.Common.Models;
+﻿namespace Core.AI.Models;
 
-public class AiRequestOptions
+public class AIRequestOptions
 {
     public string? Context { get; set; }
 

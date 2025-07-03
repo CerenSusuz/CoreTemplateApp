@@ -1,10 +1,11 @@
 ﻿using System.Reflection;
 using System.Text;
+using Core.AI.Abstractions;
+using Core.AI.Config;
+using Core.AI.Providers;
 using CoreApp.Application.Common.Behaviors;
-using CoreApp.Application.Common.Interfaces.AI;
 using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Application.Common.Settings;
-using CoreApp.Infrastructure.AI;
 using CoreApp.Infrastructure.Data;
 using CoreApp.Infrastructure.Services;
 using FluentValidation;
@@ -17,20 +18,18 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ------------------------------------
-// Services
-// ------------------------------------
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+// --- AI Services ---
 builder.Services.Configure<AISettings>(builder.Configuration.GetSection("AiSettings"));
 builder.Services.AddSingleton(sp =>
     sp.GetRequiredService<IOptions<AISettings>>().Value);
 
 builder.Services.AddScoped<OpenRouterAiService>();
 builder.Services.AddScoped<OllamaAiService>();
-builder.Services.AddScoped<IAIService, AiServiceResolver>();
+builder.Services.AddScoped<IAIService, AIServiceResolver>();
+
 
 builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -38,6 +37,7 @@ builder.Configuration
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
     .AddUserSecrets<Program>();
 
+// Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "CoreApp API", Version = "v1" });
@@ -89,7 +89,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<CoreAppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
 // Bind JwtSettings from config
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
@@ -136,7 +135,6 @@ builder.Services.AddAuthorization();
 // Auth Service
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-
 // MediatR
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(Assembly.Load("CoreApp.Application")));
@@ -152,15 +150,11 @@ builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavi
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
 // builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
 
-// ------------------------------------
 // App Build
-// ------------------------------------
 
 var app = builder.Build();
 
-// ------------------------------------
 // Middleware
-// ------------------------------------
 
 if (app.Environment.IsDevelopment())
 {

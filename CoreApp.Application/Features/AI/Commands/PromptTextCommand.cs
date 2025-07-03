@@ -1,5 +1,4 @@
-﻿using CoreApp.Application.Common.Models;
-using MediatR;
+﻿using MediatR;
 
 namespace CoreApp.Application.Features.AI.Commands;
 

@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+
+		<PackageId>CoreTemplate.AI</PackageId>
+		<Version>1.1.0</Version>
+		<Authors>Ceren Susuz</Authors>
+		<Company>Ceren Susuz</Company>
+		<Product>Core.AI</Product>
+		<Description>Strategy-based modular AI service with support for OpenRouter and Ollama.</Description>
+		<PackageTags>AI;OpenAI;OpenRouter;Ollama;Strategy;MediatR;CleanArchitecture</PackageTags>
+		<RepositoryUrl>https://github.com/your-repo/CoreApp</RepositoryUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MediatR" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.6" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="9.0.6" />
+	</ItemGroup>
+
+</Project>
