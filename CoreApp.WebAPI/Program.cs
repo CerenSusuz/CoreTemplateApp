@@ -1,10 +1,14 @@
 ﻿using System.Reflection;
 using System.Text;
+using Core.AI.Abstractions;
+using Core.AI.Commands;
+using Core.AI.Config;
+using Core.AI.Providers;
+using Core.AI.Providers.Ollama;
+using Core.AI.Providers.OpenRouter;
 using CoreApp.Application.Common.Behaviors;
-using CoreApp.Application.Common.Interfaces.AI;
 using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Application.Common.Settings;
-using CoreApp.Infrastructure.AI;
 using CoreApp.Infrastructure.Data;
 using CoreApp.Infrastructure.Services;
 using FluentValidation;
@@ -17,20 +21,27 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ------------------------------------
-// Services
-// ------------------------------------
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.Configure<AISettings>(builder.Configuration.GetSection("AiSettings"));
+// --- AI Services ---
+builder.Services.AddOptions<AISettings>()
+    .Bind(builder.Configuration.GetSection("AiSettings"))
+    .Validate(settings => Enum.IsDefined(typeof(AIProvider), settings.Provider),
+        "Invalid AI provider configured in AiSettings.Provider");
+
 builder.Services.AddSingleton(sp =>
     sp.GetRequiredService<IOptions<AISettings>>().Value);
 
+// Providers
 builder.Services.AddScoped<OpenRouterAiService>();
 builder.Services.AddScoped<OllamaAiService>();
-builder.Services.AddScoped<IAIService, AiServiceResolver>();
+builder.Services.AddScoped<IAIService, AIServiceResolver>();
+
+// Model Providers
+builder.Services.AddScoped<OpenRouterModelProvider>();
+builder.Services.AddScoped<OllamaModelProvider>();
+builder.Services.AddScoped<AIModelProviderResolver>();
 
 builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -38,6 +49,7 @@ builder.Configuration
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
     .AddUserSecrets<Program>();
 
+// Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "CoreApp API", Version = "v1" });
@@ -89,7 +101,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<CoreAppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
 // Bind JwtSettings from config
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
@@ -99,7 +110,6 @@ var jwtSettings = builder.Configuration
     .Get<JwtSettings>();
 
 builder.Services.AddSingleton(jwtSettings);
-
 
 var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
 Console.WriteLine("[Program.cs] JWT SECRET: " + jwtSettings.Secret);
@@ -136,10 +146,14 @@ builder.Services.AddAuthorization();
 // Auth Service
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-
 // MediatR
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(Assembly.Load("CoreApp.Application")));
+
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(PromptTextCommandHandler).Assembly);
+});
 
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(Assembly.Load("CoreApp.Application"));
@@ -152,15 +166,7 @@ builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavi
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
 // builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
 
-// ------------------------------------
-// App Build
-// ------------------------------------
-
 var app = builder.Build();
-
-// ------------------------------------
-// Middleware
-// ------------------------------------
 
 if (app.Environment.IsDevelopment())
 {
@@ -175,6 +181,7 @@ app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

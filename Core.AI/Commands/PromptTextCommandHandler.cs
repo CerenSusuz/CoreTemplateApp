@@ -1,7 +1,7 @@
-﻿using CoreApp.Application.Common.Interfaces.AI;
+﻿using Core.AI.Abstractions;
 using MediatR;
 
-namespace CoreApp.Application.Features.AI.Commands;
+namespace Core.AI.Commands;
 
 public class PromptTextCommandHandler : IRequestHandler<PromptTextCommand, string>
 {
