@@ -6,11 +6,14 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 
 		<PackageId>CoreTemplate.AI</PackageId>
-		<Version>1.1.0</Version>
+		<Version>1.2.0</Version>
 		<Authors>Ceren Susuz</Authors>
 		<Company>Ceren Susuz</Company>
 		<Product>CoreTemplate.AI</Product>
-		<Description>Modular, strategy-based AI abstraction layer with support for OpenRouter and Ollama, including dynamic model validation and runtime switching.</Description>
+		<Description>
+			Modular, strategy-based AI abstraction layer for .NET with built-in support for OpenRouter and Ollama.
+			Now includes real-time streaming support, dynamic model validation, and runtime model/provider switching.
+		</Description>
 		<PackageTags>AI;OpenRouter;Ollama;ChatGPT;MediatR;CQRS;CleanArchitecture</PackageTags>
 		<RepositoryUrl>https://github.com/CerenSusuz/CoreTemplateApp</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
