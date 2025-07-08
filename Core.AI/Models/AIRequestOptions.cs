@@ -1,4 +1,6 @@
-﻿namespace Core.AI.Models;
+﻿using Core.AI.Config;
+
+namespace Core.AI.Models;
 
 public class AIRequestOptions
 {
@@ -8,4 +10,6 @@ public class AIRequestOptions
     public int? MaxTokens { get; set; }
     public float? Temperature { get; set; }
     public string? Model { get; set; }
+    public AIProvider? Provider { get; set; }
+
 }

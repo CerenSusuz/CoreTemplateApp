@@ -72,4 +72,14 @@ public class OpenRouterAiService : IAIService
         var models = await provider.GetAvailableModelsAsync();
         return models.Contains(model);
     }
+
+    public async IAsyncEnumerable<string> StreamPromptAsync(string prompt, AIRequestOptions? options = null)
+    {
+        var words = ("This is a simulated streaming response. It comes word by word.").Split(" ");
+        foreach (var word in words)
+        {
+            await Task.Delay(300);
+            yield return word + " ";
+        }
+    }
 }

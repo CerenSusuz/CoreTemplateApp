@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-using System.Text;
-using Core.AI.Abstractions;
+﻿using Core.AI.Abstractions;
 using Core.AI.Commands;
 using Core.AI.Config;
 using Core.AI.Providers;
@@ -18,10 +16,18 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
+using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 
 // --- AI Services ---

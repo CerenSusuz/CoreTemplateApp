@@ -7,4 +7,6 @@ public interface IAIService
     Task<string> PromptAsync(string prompt, AIRequestOptions? options = null);
 
     Task<bool> IsModelSupportedAsync(string model);
+
+    IAsyncEnumerable<string> StreamPromptAsync(string prompt, AIRequestOptions? options = null);
 }

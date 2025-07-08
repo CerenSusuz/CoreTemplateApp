@@ -2,6 +2,7 @@
 using Core.AI.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace CoreApp.WebAPI.Controllers;
 
@@ -35,4 +36,24 @@ public class AiController : ControllerBase
 
         return Ok(new { model, isSupported });
     }
+
+    [HttpPost("stream")]
+    public async Task StreamPrompt([FromBody] PromptTextCommand command)
+    {
+        Response.ContentType = "text/plain";
+
+        Console.WriteLine("[Streaming] Started...");
+
+        await foreach (var chunk in _aiService.StreamPromptAsync(command.Prompt, command.Options))
+        {
+            Console.WriteLine($"[Chunk] {chunk}");
+            var buffer = Encoding.UTF8.GetBytes(chunk);
+            await Response.Body.WriteAsync(buffer);
+            await Response.Body.FlushAsync();
+        }
+
+        Console.WriteLine("[Streaming] Ended.");
+    }
+
+
 }
