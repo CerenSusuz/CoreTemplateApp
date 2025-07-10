@@ -12,7 +12,7 @@ public class OpenRouterModelProvider : IAIModelProvider
 
     public OpenRouterModelProvider(IConfiguration config)
     {
-        _apiKey = config["OpenAI:ApiKey"]!;
+        _apiKey = config["OpenRouterAI:ApiKey"]!;
         _httpClient = new HttpClient
         {
             BaseAddress = new Uri("https://openrouter.ai/api/v1/")

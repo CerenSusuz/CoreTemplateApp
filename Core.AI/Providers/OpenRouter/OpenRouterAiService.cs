@@ -18,7 +18,7 @@ public class OpenRouterAiService : IAIService
         AIModelProviderResolver modelResolver,
         IConfiguration config)
     {
-        _apiKey = config["OpenAI:ApiKey"]!;
+        _apiKey = config["OpenRouterAI:ApiKey"]!;
         _modelResolver = modelResolver;
 
         _httpClient = new HttpClient

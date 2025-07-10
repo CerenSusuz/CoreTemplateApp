@@ -1,9 +1,12 @@
 ﻿using Core.AI.Abstractions;
 using Core.AI.Commands;
 using Core.AI.Config;
+using Core.AI.Memory;
 using Core.AI.Providers;
 using Core.AI.Providers.Ollama;
 using Core.AI.Providers.OpenRouter;
+using Core.AI.Providers.Profiles;
+using Core.AI.Providers.SemanticKernel;
 using CoreApp.Application.Common.Behaviors;
 using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Application.Common.Settings;
@@ -48,6 +51,11 @@ builder.Services.AddScoped<IAIService, AIServiceResolver>();
 builder.Services.AddScoped<OpenRouterModelProvider>();
 builder.Services.AddScoped<OllamaModelProvider>();
 builder.Services.AddScoped<AIModelProviderResolver>();
+
+// Agent Service
+builder.Services.AddScoped<IAgentService, SemanticKernelAgentService>();
+builder.Services.AddSingleton<ChatHistoryStore>();
+builder.Services.AddSingleton<AgentProfileProvider>();
 
 builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
