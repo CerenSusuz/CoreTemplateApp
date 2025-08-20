@@ -2,9 +2,13 @@
 
 namespace Core.AI.Memory;
 
+/// <summary>
+/// Stores chat history in memory, indexed by user ID.
+/// </summary>
 public class ChatHistoryStore
 {
     private readonly ConcurrentDictionary<string, List<(string Role, string Content)>> _histories = new();
+
 
     public void AddMessage(string userId, string role, string content)
     {
@@ -12,10 +16,12 @@ public class ChatHistoryStore
         history.Add((role, content));
     }
 
+
     public List<(string Role, string Content)> GetHistory(string userId)
     {
         return _histories.TryGetValue(userId, out var history) ? history : new List<(string, string)>();
     }
+
 
     public void Clear(string userId)
     {

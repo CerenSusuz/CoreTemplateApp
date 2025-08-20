@@ -1,49 +1,55 @@
 ﻿using System.Net.Http.Headers;
 using System.Text.Json;
 using Core.AI.Abstractions;
-using Microsoft.Extensions.Configuration;
+using Core.AI.Config;
 
 namespace Core.AI.Providers.OpenRouter;
 
+/// <summary>
+/// Fetches available model IDs from OpenRouter's model registry API.
+/// </summary>
 public class OpenRouterModelProvider : IAIModelProvider
 {
-    private readonly string _apiKey;
     private readonly HttpClient _httpClient;
 
-    public OpenRouterModelProvider(IConfiguration config)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OpenRouterModelProvider"/> class.
+    /// </summary>
+    public OpenRouterModelProvider(OpenRouterSettings settings)
     {
-        _apiKey = config["OpenRouterAI:ApiKey"]!;
         _httpClient = new HttpClient
         {
             BaseAddress = new Uri("https://openrouter.ai/api/v1/")
         };
         _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", _apiKey);
+            new AuthenticationHeaderValue("Bearer", settings.ApiKey);
     }
 
+    /// <summary>
+    /// Retrieves the list of available model IDs from OpenRouter.
+    /// </summary>
+    /// <returns>List of model names.</returns>
     public async Task<List<string>> GetAvailableModelsAsync()
     {
         var response = await _httpClient.GetAsync("models");
         var content = await response.Content.ReadAsStringAsync();
 
-        var modelList = new List<string>();
+        var list = new List<string>();
         try
         {
             using var doc = JsonDocument.Parse(content);
             var models = doc.RootElement.GetProperty("data");
-
-            foreach (var model in models.EnumerateArray())
+            foreach (var m in models.EnumerateArray())
             {
-                var id = model.GetProperty("id").GetString();
-                if (!string.IsNullOrWhiteSpace(id))
-                    modelList.Add(id);
+                var id = m.GetProperty("id").GetString();
+                if (!string.IsNullOrWhiteSpace(id)) list.Add(id);
             }
         }
         catch
         {
-            // optionally log
+            // Optionally log or handle error
         }
 
-        return modelList;
+        return list;
     }
 }

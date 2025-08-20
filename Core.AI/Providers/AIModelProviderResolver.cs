@@ -6,12 +6,21 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Core.AI.Providers;
 
+/// <summary>
+/// Resolves model provider services based on the selected AI provider.
+/// </summary>
 public class AIModelProviderResolver
 {
     private readonly IServiceProvider _provider;
 
-    public AIModelProviderResolver(IServiceProvider provider) => _provider = provider;
+    public AIModelProviderResolver(IServiceProvider provider)
+    {
+        _provider = provider;
+    }
 
+    /// <summary>
+    /// Resolves the correct model provider service.
+    /// </summary>
     public IAIModelProvider Resolve(AIProvider provider)
     {
         return provider switch

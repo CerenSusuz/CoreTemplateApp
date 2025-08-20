@@ -24,24 +24,30 @@ public class AiController : ControllerBase
     public async Task<IActionResult> Prompt([FromBody] PromptTextCommand command)
     {
         var result = await _mediator.Send(command);
-
         return Ok(new { result });
     }
 
-    // GET: /api/ai/model-supported?model=anthropic/claude-3-haiku
+    // POST: /api/ai/completion
+    [HttpPost("completion")]
+    public async Task<IActionResult> Completion([FromBody] PromptTextCommand command)
+    {
+        var result = await _aiService.GetCompletionAsync(command.Prompt);
+        return Ok(new { result });
+    }
+
+    // GET: /api/ai/model-supported?model=llama3
     [HttpGet("model-supported")]
     public async Task<IActionResult> IsModelSupported([FromQuery] string model)
     {
         var isSupported = await _aiService.IsModelSupportedAsync(model);
-
         return Ok(new { model, isSupported });
     }
 
+    // POST: /api/ai/stream
     [HttpPost("stream")]
     public async Task StreamPrompt([FromBody] PromptTextCommand command)
     {
         Response.ContentType = "text/plain";
-
         Console.WriteLine("[Streaming] Started...");
 
         await foreach (var chunk in _aiService.StreamPromptAsync(command.Prompt, command.Options))
@@ -54,6 +60,4 @@ public class AiController : ControllerBase
 
         Console.WriteLine("[Streaming] Ended.");
     }
-
-
 }

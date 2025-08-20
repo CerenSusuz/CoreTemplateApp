@@ -10,6 +10,9 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace Core.AI.Providers.SemanticKernel;
 
+/// <summary>
+/// Provides agent-based AI chat interaction using Semantic Kernel with support for streaming and profile-based customization.
+/// </summary>
 public class SemanticKernelAgentService : IAgentService
 {
     private readonly ChatHistoryStore _chatStore;
@@ -17,6 +20,9 @@ public class SemanticKernelAgentService : IAgentService
     private readonly AgentRequestOptionsValidator _validator;
     private readonly IConfiguration _config;
 
+    /// <summary>
+    /// Creates a new instance of <see cref="SemanticKernelAgentService"/>.
+    /// </summary>
     public SemanticKernelAgentService(
         IConfiguration config,
         ChatHistoryStore chatStore,
@@ -28,6 +34,9 @@ public class SemanticKernelAgentService : IAgentService
         _validator = new AgentRequestOptionsValidator();
     }
 
+    /// <summary>
+    /// Builds the Semantic Kernel with the appropriate chat model provider and configures the chat service.
+    /// </summary>
     private (Kernel Kernel, IChatCompletionService ChatService) BuildKernel(AIRequestOptions? options)
     {
         var defaultProvider = Enum.TryParse(_config["AiSettings:Provider"], out AIProvider fallbackProvider)
@@ -41,7 +50,7 @@ public class SemanticKernelAgentService : IAgentService
         switch (provider)
         {
             case AIProvider.OpenRouter:
-                var openRouterApiKey = _config["OpenRouterAI:ApiKey"];
+                var openRouterApiKey = _config["OpenRouter:ApiKey"];
                 builder.AddOpenAIChatCompletion(
                     modelId: model,
                     apiKey: openRouterApiKey,
@@ -65,14 +74,19 @@ public class SemanticKernelAgentService : IAgentService
 
         var kernel = builder.Build();
         var chatService = kernel.GetRequiredService<IChatCompletionService>();
+
         return (kernel, chatService);
     }
 
+    /// <summary>
+    /// Performs a chat completion using Semantic Kernel and returns a single response.
+    /// </summary>
     public async Task<string> ChatAsync(string prompt, AgentRequestOptions? options = null, string? userId = null)
     {
         options ??= new AgentRequestOptions();
 
         var validationResult = _validator.Validate(options);
+
         if (!validationResult.IsValid)
             return $"[Validation Error] {string.Join(" | ", validationResult.Errors.Select(e => e.ErrorMessage))}";
 
@@ -88,6 +102,7 @@ public class SemanticKernelAgentService : IAgentService
         if (!string.IsNullOrWhiteSpace(userId))
         {
             var history = _chatStore.GetHistory(userId);
+
             foreach (var (role, content) in history)
             {
                 if (role == "user") messages.AddUserMessage(content);
@@ -109,11 +124,15 @@ public class SemanticKernelAgentService : IAgentService
         return result;
     }
 
+    /// <summary>
+    /// Streams the chat response as tokens are received using Semantic Kernel.
+    /// </summary>
     public async IAsyncEnumerable<string> StreamChatAsync(string prompt, AgentRequestOptions? options = null, string? userId = null)
     {
         options ??= new AgentRequestOptions();
 
         var validationResult = _validator.Validate(options);
+
         if (!validationResult.IsValid)
         {
             yield return $"[Validation Error] {string.Join(" | ", validationResult.Errors.Select(e => e.ErrorMessage))}";
@@ -132,6 +151,7 @@ public class SemanticKernelAgentService : IAgentService
         if (!string.IsNullOrWhiteSpace(userId))
         {
             var history = _chatStore.GetHistory(userId);
+
             foreach (var (role, content) in history)
             {
                 if (role == "user") messages.AddUserMessage(content);
@@ -161,6 +181,9 @@ public class SemanticKernelAgentService : IAgentService
             _chatStore.AddMessage(userId, "assistant", fullResponse);
     }
 
+    /// <summary>
+    /// Checks if the specified model is supported by the Semantic Kernel. Always returns true for now.
+    /// </summary>
     public Task<bool> IsModelSupportedAsync(string model, string provider)
         => Task.FromResult(true);
 }
