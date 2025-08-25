@@ -51,6 +51,7 @@ public class SemanticKernelAgentService : IAgentService
 
         var kernel = b.Build();
         var chat = kernel.GetRequiredService<IChatCompletionService>();
+
         return (kernel, chat);
     }
 
@@ -59,6 +60,7 @@ public class SemanticKernelAgentService : IAgentService
         options ??= new AgentRequestOptions();
 
         var validation = _validator.Validate(options);
+
         if (!validation.IsValid)
             return $"[Validation Error] {string.Join(" | ", validation.Errors.Select(e => e.ErrorMessage))}";
 
@@ -104,6 +106,7 @@ public class SemanticKernelAgentService : IAgentService
         options ??= new AgentRequestOptions();
 
         var validation = _validator.Validate(options);
+
         if (!validation.IsValid)
         {
             yield return $"[Validation Error] {string.Join(" | ", validation.Errors.Select(e => e.ErrorMessage))}";

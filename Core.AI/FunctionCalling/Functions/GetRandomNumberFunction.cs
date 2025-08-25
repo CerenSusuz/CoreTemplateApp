@@ -2,17 +2,12 @@
 
 namespace Core.AI.FunctionCalling.Functions;
 
-/// <summary>
-/// AI function that returns a random number within a given range.
-/// </summary>
 public class GetRandomNumberFunction : IAiFunction
 {
     private readonly Random _random = new();
 
-
     public string Name => "get_random_number";
     public string Description => "Returns a random number between min and max (inclusive).";
-
 
     public object GetJsonSchema() => new
     {
@@ -24,7 +19,6 @@ public class GetRandomNumberFunction : IAiFunction
         },
         required = new[] { "min", "max" }
     };
-
 
     public Task<FunctionCallResult> InvokeAsync(string argumentsJson, CancellationToken cancellationToken)
     {
@@ -38,9 +32,9 @@ public class GetRandomNumberFunction : IAiFunction
 
 
         var number = _random.Next(args.Min, args.Max + 1);
+        
         return Task.FromResult(FunctionCallResult.Ok(new { value = number }));
     }
-
 
     private sealed class Args
     {

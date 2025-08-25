@@ -1,7 +1,4 @@
 ﻿namespace Core.AI.FunctionCalling.Functions;
-/// <summary>
-/// Represents a function that returns the current server time.
-/// </summary>
 public class GetServerTimeFunction : IAiFunction, IJsonSchemaProvider
 {
     public string Name => "get_server_time";
@@ -14,7 +11,6 @@ public class GetServerTimeFunction : IAiFunction, IJsonSchemaProvider
         properties = new { },
         required = Array.Empty<string>()
     };
-
 
     public Task<FunctionCallResult> InvokeAsync(string argumentsJson, CancellationToken cancellationToken)
     {

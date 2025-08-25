@@ -2,14 +2,10 @@
 
 namespace Core.AI.FunctionCalling.Functions;
 
-/// <summary>
-/// AI function that calculates the sum of two integers.
-/// </summary>
 public class CalculateSumFunction : IAiFunction
 {
     public string Name => "calculate_sum";
     public string Description => "Calculates the sum of two integers.";
-
 
     public object GetJsonSchema() => new
     {
@@ -22,7 +18,6 @@ public class CalculateSumFunction : IAiFunction
         required = new[] { "a", "b" }
     };
 
-
     public Task<FunctionCallResult> InvokeAsync(string argumentsJson, CancellationToken cancellationToken)
     {
         var args = JsonSerializer.Deserialize<SumArgs>(argumentsJson);
@@ -30,10 +25,8 @@ public class CalculateSumFunction : IAiFunction
         if (args == null)
             return Task.FromResult(FunctionCallResult.Fail("Invalid input"));
 
-
         return Task.FromResult(FunctionCallResult.Ok(new { sum = args.A + args.B }));
     }
-
 
     private class SumArgs
     {

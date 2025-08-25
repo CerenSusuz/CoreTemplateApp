@@ -7,10 +7,6 @@ using Microsoft.Extensions.Options;
 
 namespace Core.AI.Providers;
 
-/// <summary>
-/// Resolves the appropriate AI service (Ollama or OpenRouter) based on settings or request options.
-/// Implements <see cref="IAIService"/> and delegates to the appropriate backend.
-/// </summary>
 public class AIServiceResolver(IOptions<AISettings> settings, OpenRouterAiService open, OllamaAiService ollama) : IAIService
 {
     private readonly AISettings _settings = settings.Value;

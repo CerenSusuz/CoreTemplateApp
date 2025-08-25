@@ -89,6 +89,7 @@ public class OllamaAiService : IAIService
                 Content = content.GetString(),
                 FunctionExecuted = false
             };
+
             return JsonSerializer.Serialize(aiResponse);
         }
 
@@ -117,6 +118,7 @@ public class OllamaAiService : IAIService
 
         var json = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(json);
+
         return doc.RootElement.GetProperty("response").GetString() ?? string.Empty;
     }
 
@@ -145,12 +147,14 @@ public class OllamaAiService : IAIService
         while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested)
         {
             var line = await reader.ReadLineAsync();
+
             if (string.IsNullOrWhiteSpace(line)) continue;
 
             string? value = null;
             try
             {
                 using var doc = JsonDocument.Parse(line);
+
                 if (doc.RootElement.TryGetProperty("response", out var resp))
                     value = resp.GetString();
             }
@@ -174,6 +178,7 @@ public class OllamaAiService : IAIService
             foreach (var m in models.EnumerateArray())
             {
                 var name = m.GetProperty("name").GetString();
+
                 if (string.Equals(name, model, StringComparison.OrdinalIgnoreCase))
                     return true;
             }

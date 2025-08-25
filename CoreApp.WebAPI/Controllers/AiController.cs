@@ -54,7 +54,7 @@ public class AiController : ControllerBase
         var opts = new AgentRequestOptions
         {
             AgentId = request.AgentId,
-            Profile = request.AgentId, // Id/Name fark etmez
+            Profile = request.AgentId,
             Model = request.Model,
             UseFunctionCalling = request.UseFunctionCalling,
             Provider = Enum.TryParse<AIProvider>(request.Provider, out var p) ? p : null

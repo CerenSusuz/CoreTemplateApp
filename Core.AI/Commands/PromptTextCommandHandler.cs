@@ -2,10 +2,6 @@
 using MediatR;
 
 namespace Core.AI.Commands;
-
-/// <summary>
-/// Handles execution of PromptTextCommand by invoking IAIService.
-/// </summary>
 public class PromptTextCommandHandler : IRequestHandler<PromptTextCommand, string>
 {
     private readonly IAIService _aiService;

@@ -2,16 +2,11 @@
 
 namespace Core.AI.FunctionCalling;
 
-/// <summary>
-/// Dispatches function calls to registered IAiFunction implementations.
-/// </summary>
 public class AiFunctionDispatcher
 {
     private readonly Dictionary<string, IAiFunction> _functions;
 
-
     public AiFunctionDispatcher(IEnumerable<IAiFunction> functions) => _functions = functions.ToDictionary(f => f.Name);
-
 
     public async Task<FunctionCallResult> TryDispatchAsync(string functionName, Dictionary<string, object> args, CancellationToken cancellationToken)
     {
@@ -20,6 +15,7 @@ public class AiFunctionDispatcher
 
 
         var jsonArgs = JsonSerializer.Serialize(args);
+
         return await function.InvokeAsync(jsonArgs, cancellationToken);
     }
 }

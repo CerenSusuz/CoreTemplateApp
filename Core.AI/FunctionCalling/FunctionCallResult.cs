@@ -2,18 +2,13 @@
 
 namespace Core.AI.FunctionCalling;
 
-/// <summary>
-/// Represents the result of invoking a function.
-/// </summary>
 public class FunctionCallResult
 {
     public bool Success { get; private set; }
     public string? Result { get; private set; }
     public string? ErrorMessage { get; private set; }
 
-
     private FunctionCallResult() { }
-
 
     public static FunctionCallResult Ok(object result)
     {
@@ -23,7 +18,6 @@ public class FunctionCallResult
             Result = JsonSerializer.Serialize(result)
         };
     }
-
 
     public static FunctionCallResult Fail(string errorMessage)
     {

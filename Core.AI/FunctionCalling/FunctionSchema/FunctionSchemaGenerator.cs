@@ -1,14 +1,10 @@
 ﻿namespace Core.AI.FunctionCalling.FunctionSchema;
 
-/// <summary>
-/// Provides helper methods to convert IAiFunction definitions to schemas required by providers.
-/// </summary>
 public static class FunctionSchemaGenerator
 {
     public static object ToOpenAISchema(IAiFunction f)
     {
         var parameters = f is IJsonSchemaProvider sp ? sp.GetJsonSchema() : new { type = "object", properties = new { }, required = new string[] { } };
-
 
         return new
         {

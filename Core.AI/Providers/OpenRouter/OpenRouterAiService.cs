@@ -31,6 +31,7 @@ public class OpenRouterAiService(
         var body = new { model = options?.Model ?? _aiSettings.Model, messages };
 
         var response = await SendRequestAsync(body, cancellationToken: default);
+
         return ExtractMessage(response);
     }
 
@@ -130,11 +131,14 @@ public class OpenRouterAiService(
         while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested)
         {
             var line = await reader.ReadLineAsync();
+
             if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:")) continue;
 
             var jsonLine = line["data:".Length..].Trim();
+
             if (jsonLine == "[DONE]") yield break;
             string? content = null;
+
             try
             {
                 using var doc = JsonDocument.Parse(jsonLine);
@@ -145,9 +149,7 @@ public class OpenRouterAiService(
                     .GetString();
             }
             catch
-            {
-                // Ignore parse errors
-            }
+            {}
 
             if (!string.IsNullOrWhiteSpace(content))
             {
@@ -162,6 +164,7 @@ public class OpenRouterAiService(
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
 
         var response = await _httpClient.SendAsync(request);
+
         if (!response.IsSuccessStatusCode) return false;
 
         var json = await response.Content.ReadAsStringAsync();
@@ -172,8 +175,6 @@ public class OpenRouterAiService(
                    m.TryGetProperty("id", out var idProp) &&
                    string.Equals(idProp.GetString(), model, StringComparison.OrdinalIgnoreCase));
     }
-
-    // 🔧 PRIVATE HELPERS
 
     private static List<object> BuildMessages(string prompt, string? systemPrompt)
     {

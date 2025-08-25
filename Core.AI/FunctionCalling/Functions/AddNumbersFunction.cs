@@ -2,14 +2,10 @@
 
 namespace Core.AI.FunctionCalling.Functions;
 
-/// <summary>
-/// AI function that adds two numbers and returns the result.
-/// </summary>
 public class AddNumbersFunction : IAiFunction
 {
     public string Name => "add_numbers";
     public string Description => "Adds two numbers and returns the sum.";
-
 
     public object GetJsonSchema() => new
     {
@@ -22,7 +18,6 @@ public class AddNumbersFunction : IAiFunction
         required = new[] { "a", "b" }
     };
 
-
     public async Task<FunctionCallResult> InvokeAsync(string argumentsJson, CancellationToken cancellationToken)
     {
         try
@@ -31,7 +26,6 @@ public class AddNumbersFunction : IAiFunction
 
             if (args == null || !args.ContainsKey("a") || !args.ContainsKey("b"))
                 return FunctionCallResult.Fail("Invalid arguments. Expected { a: number, b: number }.");
-
 
             var sum = args["a"] + args["b"];
 
