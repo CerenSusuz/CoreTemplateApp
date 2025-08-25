@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Core.AI.FunctionCalling.FunctionSchema;
+﻿namespace Core.AI.FunctionCalling.FunctionSchema;
 
 /// <summary>
 /// Provides helper methods to convert IAiFunction definitions to schemas required by providers.

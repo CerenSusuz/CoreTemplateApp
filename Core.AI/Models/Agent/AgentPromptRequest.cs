@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Core.AI.Models;
+﻿namespace Core.AI.Models.Agent;
 
 /// <summary>
 /// Represents a request to prompt an agent with optional settings and user context.

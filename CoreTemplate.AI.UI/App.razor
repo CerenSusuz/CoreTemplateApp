@@ -1,0 +1,20 @@
+﻿<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <div class="hero">
+                <div class="card hero-card" style="max-width:640px">
+                    <h1 style="margin-bottom:8px;">Page not found</h1>
+                    <p class="muted">The page you are looking for does not exist.</p>
+                    <div class="btn-row">
+                        <NavLink href="/" class="btn btn-primary">Go Home</NavLink>
+                        <NavLink href="/chat" class="btn btn-ghost">Open Chat</NavLink>
+                    </div>
+                </div>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

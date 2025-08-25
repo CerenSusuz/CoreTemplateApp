@@ -1,6 +1,4 @@
-﻿using Core.AI.Models;
-
-namespace Core.AI.FunctionCalling;
+﻿namespace Core.AI.FunctionCalling;
 
 /// <summary>
 /// Represents the function call request.

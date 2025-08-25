@@ -33,6 +33,8 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.7" />
 		<PackageReference Include="Microsoft.Extensions.Options" Version="9.0.7" />
 		<PackageReference Include="Microsoft.SemanticKernel" Version="1.60.0" />
+		<PackageReference Include="Panlingo.LanguageIdentification.CLD2" Version="0.6.0" />
+		<PackageReference Include="Panlingo.LanguageIdentification.CLD2.Native" Version="0.6.0" />
 	</ItemGroup>
 
 </Project>

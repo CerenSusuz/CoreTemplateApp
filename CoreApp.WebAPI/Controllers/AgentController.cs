@@ -1,6 +1,6 @@
-﻿using Azure;
-using Core.AI.Abstractions;
-using Core.AI.Models;
+﻿using Core.AI.Abstractions;
+using Core.AI.Models.Agent;
+using Core.AI.Providers.Profiles;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 
@@ -11,13 +11,21 @@ namespace CoreApp.WebAPI.Controllers;
 public class AgentController : ControllerBase
 {
     private readonly IAgentService _agentService;
+    private readonly AgentProfileProvider _profiles;
 
-    public AgentController(IAgentService agentService)
+    public AgentController(IAgentService agentService, AgentProfileProvider profiles)
     {
         _agentService = agentService;
+        _profiles = profiles;
     }
 
-    // POST /api/agent/prompt
+    [HttpGet("profiles")]
+    public IActionResult GetProfiles()
+    {
+        var list = _profiles.GetAllProfiles().Select(p => new { p.Id, p.Name, p.Description });
+        return Ok(list);
+    }
+
     [HttpPost("prompt")]
     public async Task<IActionResult> Prompt([FromBody] AgentPromptRequest request)
     {
@@ -25,12 +33,10 @@ public class AgentController : ControllerBase
         return Ok(new { result });
     }
 
-    // POST /api/agent/stream
     [HttpPost("stream")]
     public async Task StreamPrompt([FromBody] AgentPromptRequest request)
     {
         Response.ContentType = "text/plain";
-
         await foreach (var chunk in _agentService.StreamChatAsync(request.Prompt, request.Options, request.UserId))
         {
             var buffer = Encoding.UTF8.GetBytes(chunk);

@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreApp.WebAPI", "CoreApp.W
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.AI", "Core.AI\Core.AI.csproj", "{1FD962E3-D9D4-4541-B34D-079DA62CD870}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreTemplate.AI.UI", "CoreTemplate.AI.UI\CoreTemplate.AI.UI.csproj", "{D4F5DAD2-7B1A-490F-9109-6211F27B9D30}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,8 +41,15 @@ Global
 		{1FD962E3-D9D4-4541-B34D-079DA62CD870}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1FD962E3-D9D4-4541-B34D-079DA62CD870}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1FD962E3-D9D4-4541-B34D-079DA62CD870}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4F5DAD2-7B1A-490F-9109-6211F27B9D30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4F5DAD2-7B1A-490F-9109-6211F27B9D30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4F5DAD2-7B1A-490F-9109-6211F27B9D30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4F5DAD2-7B1A-490F-9109-6211F27B9D30}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5CE15E0A-138E-4A14-961C-200788AAFBA1}
 	EndGlobalSection
 EndGlobal

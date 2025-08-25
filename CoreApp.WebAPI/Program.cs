@@ -2,7 +2,6 @@
 using Core.AI.Commands;
 using Core.AI.Config;
 using Core.AI.FunctionCalling;
-using Core.AI.FunctionCalling.Functions;
 using Core.AI.Memory;
 using Core.AI.Providers;
 using Core.AI.Providers.Ollama;
@@ -21,7 +20,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Scrutor;
 using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -50,6 +48,7 @@ builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<OpenRouterSet
 builder.Services.AddHttpClient<OllamaAiService>();
 builder.Services.AddScoped<OpenRouterAiService>();
 builder.Services.AddScoped<IAIService, AIServiceResolver>();
+builder.Services.AddSingleton<AgentProfileProvider>();
 
 // Model Providers
 builder.Services.AddScoped<OllamaModelProvider>();

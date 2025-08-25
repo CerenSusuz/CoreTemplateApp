@@ -3,7 +3,6 @@ using Core.AI.Config;
 using Core.AI.FunctionCalling;
 using Core.AI.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json.Serialization;
 
 namespace CoreApp.WebAPI.Controllers;
 

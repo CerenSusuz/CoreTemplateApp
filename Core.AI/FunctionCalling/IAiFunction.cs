@@ -1,7 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
-namespace Core.AI.FunctionCalling;
+﻿namespace Core.AI.FunctionCalling;
 
 /// <summary>
 /// Interface for describing a callable AI function.

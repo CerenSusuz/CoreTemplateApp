@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Core.AI.Models;
+﻿namespace Core.AI.Models.Agent;
 
 /// <summary>
 /// Extended options for agent requests, including the use of named profiles.
@@ -15,4 +9,6 @@ public class AgentRequestOptions : AIRequestOptions
     /// Optional agent profile name to override other options.
     /// </summary>
     public string? Profile { get; set; }
+
+    public string? AgentId { get; set; }
 }

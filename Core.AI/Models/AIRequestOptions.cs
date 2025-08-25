@@ -43,4 +43,8 @@ public class AIRequestOptions
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public AIProvider? Provider { get; set; }
+
+    public bool UseFunctionCalling { get; set; } = true;
+
+    public string? SystemPrompt { get; set; }
 }

@@ -9,9 +9,6 @@ using System.Text.Json;
 
 namespace Core.AI.Providers.Ollama;
 
-/// <summary>
-/// Provides AI chat capabilities using the Ollama API, including prompt completion, streaming, and function calling.
-/// </summary>
 public class OllamaAiService : IAIService
 {
     private readonly HttpClient _httpClient;
@@ -20,9 +17,6 @@ public class OllamaAiService : IAIService
     private readonly AiFunctionDispatcher _dispatcher;
     private readonly IFunctionRegistry _registry;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OllamaAiService"/> class.
-    /// </summary>
     public OllamaAiService(
         HttpClient httpClient,
         AISettings settings,
@@ -37,13 +31,20 @@ public class OllamaAiService : IAIService
         _registry = registry;
     }
 
-    /// <inheritdoc />
     public async Task<string> GetCompletionAsync(string prompt, AIRequestOptions? options = null, CancellationToken cancellationToken = default)
     {
-        var messages = new[] { new { role = "user", content = prompt } };
-        var tools = FunctionSchemaGenerator.ToOllamaSchemas(_registry.GetAll());
+        var messages = BuildMessages(prompt, options?.SystemPrompt);
 
-        var requestBody = new { model = _settings.Model, messages, tools };
+        var tools = options?.UseFunctionCalling == true
+            ? FunctionSchemaGenerator.ToOllamaSchemas(_registry.GetAll())
+            : null;
+
+        var requestBody = new
+        {
+            model = options?.Model ?? _settings.Model,
+            messages,
+            tools
+        };
 
         var response = await _httpClient.PostAsJsonAsync($"{_ollama.BaseUrl}/api/chat", requestBody, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -52,7 +53,6 @@ public class OllamaAiService : IAIService
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
-        // Handle function call
         if (root.TryGetProperty("message", out var message) &&
             message.TryGetProperty("tool_calls", out var toolCalls))
         {
@@ -72,13 +72,15 @@ public class OllamaAiService : IAIService
                     Content = $"Function {functionName} executed",
                     FunctionExecuted = true,
                     FunctionName = functionName,
-                    FunctionResult = result.Result
+                    FunctionResult = result?.Result is not null
+                        ? JsonDocument.Parse(result.Result).RootElement.Clone()
+                        : JsonDocument.Parse("{}").RootElement
                 };
+
                 return JsonSerializer.Serialize(aiResponse);
             }
         }
 
-        // Handle plain message
         if (root.TryGetProperty("message", out var msg) &&
             msg.TryGetProperty("content", out var content))
         {
@@ -97,36 +99,47 @@ public class OllamaAiService : IAIService
         });
     }
 
-    /// <inheritdoc />
     public async Task<string> PromptAsync(string prompt, AIRequestOptions? options = null)
     {
+        var fullPrompt = !string.IsNullOrWhiteSpace(options?.SystemPrompt)
+            ? $"{options.SystemPrompt}\n\n{prompt}"
+            : prompt;
+
         var body = new
         {
             model = options?.Model ?? _settings.Model,
-            prompt,
+            prompt = fullPrompt,
             stream = false
         };
 
-        var res = await _httpClient.PostAsJsonAsync($"{_ollama.BaseUrl}/api/generate", body);
-        res.EnsureSuccessStatusCode();
+        var response = await _httpClient.PostAsJsonAsync($"{_ollama.BaseUrl}/api/generate", body);
+        response.EnsureSuccessStatusCode();
 
-        var json = await res.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(json);
         return doc.RootElement.GetProperty("response").GetString() ?? string.Empty;
     }
 
-    /// <inheritdoc />
     public async IAsyncEnumerable<string> StreamPromptAsync(
         string prompt,
         AIRequestOptions? options = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var body = new { model = options?.Model ?? _settings.Model, prompt, stream = true };
+        var fullPrompt = !string.IsNullOrWhiteSpace(options?.SystemPrompt)
+            ? $"{options.SystemPrompt}\n\n{prompt}"
+            : prompt;
 
-        using var res = await _httpClient.PostAsJsonAsync($"{_ollama.BaseUrl}/api/generate", body, cancellationToken);
-        res.EnsureSuccessStatusCode();
+        var body = new
+        {
+            model = options?.Model ?? _settings.Model,
+            prompt = fullPrompt,
+            stream = true
+        };
 
-        using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
+        using var response = await _httpClient.PostAsJsonAsync($"{_ollama.BaseUrl}/api/generate", body, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var reader = new StreamReader(stream);
 
         while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested)
@@ -144,11 +157,10 @@ public class OllamaAiService : IAIService
             catch { }
 
             if (!string.IsNullOrEmpty(value))
-                yield return value;
+                yield return value!;
         }
     }
 
-    /// <inheritdoc />
     public async Task<bool> IsModelSupportedAsync(string model)
     {
         var res = await _httpClient.GetAsync($"{_ollama.BaseUrl}/api/tags");
@@ -168,5 +180,17 @@ public class OllamaAiService : IAIService
         }
 
         return false;
+    }
+
+    private static List<object> BuildMessages(string prompt, string? systemPrompt)
+    {
+        var messages = new List<object>();
+
+        if (!string.IsNullOrWhiteSpace(systemPrompt))
+            messages.Add(new { role = "system", content = systemPrompt });
+
+        messages.Add(new { role = "user", content = prompt });
+
+        return messages;
     }
 }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Core.AI.FunctionCalling.Functions;
+﻿namespace Core.AI.FunctionCalling.Functions;
 /// <summary>
 /// Represents a function that returns the current server time.
 /// </summary>

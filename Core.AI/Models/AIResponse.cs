@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-
-namespace Core.AI.Models;
+﻿namespace Core.AI.Models;
 
 /// <summary>
 /// Represents the response from an AI provider, including result and any executed function.

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Core.AI.FunctionCalling;
+﻿namespace Core.AI.FunctionCalling;
 
 /// <summary>
 /// Manages the registration and lookup of AI functions.
