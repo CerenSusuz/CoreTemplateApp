@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace CoreApp.Infrastructure.Migrations;
+namespace CoreApp.Infrastructure.Data.Migrations;
 
 /// <inheritdoc />
-public partial class InitialCreate : Migration
+public partial class Test : Migration
 {
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -45,9 +46,13 @@ public partial class InitialCreate : Migration
             columns: table => new
             {
                 Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                Token = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                TokenHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
                 Expires = table.Column<DateTime>(type: "datetime2", nullable: false),
                 IsRevoked = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                ReplacedByTokenHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                SessionId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                UserAgent = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                IpAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
                 UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                 CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                 UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)

@@ -1,58 +1,10 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="layout-container">
-    <header class="layout-header">
-        <div class="header-left">
-            <h2>CoreTemplate.AI</h2>
-        </div>
-        <nav class="header-right">
-            <a href="/">Home</a>
-            <a href="chat">AI Chat</a>
-        </nav>
-    </header>
+<header class="topbar">
+    <a class="brand" href="/"><img src="favicon.svg" alt="Logo" /></a>
+    <div class="spacer"></div>
+</header>
 
-    <main class="layout-main">
-        @Body
-    </main>
-</div>
-
-<style>
-    .layout-container {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-        font-family: 'Segoe UI', sans-serif;
-        background-color: #f8f9fa;
-    }
-
-    .layout-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background-color: #1f2937;
-        padding: 1rem 2rem;
-        color: #fff;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-        .layout-header h2 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-
-    .header-right a {
-        margin-left: 1rem;
-        color: #e2e8f0;
-        text-decoration: none;
-        font-weight: 500;
-    }
-
-        .header-right a:hover {
-            color: #fff;
-        }
-
-    .layout-main {
-        flex: 1;
-        padding: 2rem;
-    }
-</style>
+<main class="page-body">
+    @Body
+</main>

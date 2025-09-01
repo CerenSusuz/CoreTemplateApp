@@ -1,36 +1,25 @@
-﻿using MediatR;
+﻿using System.Diagnostics;
+using MediatR;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 
 namespace CoreApp.Application.Common.Behaviors;
 
-public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+public sealed class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
 {
     private readonly ILogger<PerformanceBehavior<TRequest, TResponse>> _logger;
+    private readonly Stopwatch _sw = new();
 
     public PerformanceBehavior(ILogger<PerformanceBehavior<TRequest, TResponse>> logger) => _logger = logger;
 
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken ct)
     {
-        var stopwatch = Stopwatch.StartNew();
-
+        _sw.Restart();
         var response = await next();
+        _sw.Stop();
 
-        stopwatch.Stop();
-
-        var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
-
-        if (elapsedMilliseconds > 500)
-        {
-            _logger.LogWarning(
-                "Long Running Request: {RequestType} ({ElapsedMilliseconds}ms)",
-                typeof(TRequest).Name,
-                elapsedMilliseconds);
-        }
+        if (_sw.ElapsedMilliseconds > 500)
+            _logger.LogWarning("Long running request {Request} took {Elapsed} ms. Payload: {@Payload}",
+                typeof(TRequest).Name, _sw.ElapsedMilliseconds, request);
 
         return response;
     }

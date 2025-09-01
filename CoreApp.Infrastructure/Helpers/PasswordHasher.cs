@@ -1,21 +1,33 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using CoreApp.Application.Common.Interfaces.Auth;
 
 namespace CoreApp.Infrastructure.Helpers;
 
-public static class PasswordHasher
+public class PasswordHasher : IPasswordHasher
 {
-    public static string Hash(string password)
-    {
-        using var sha256 = SHA256.Create();
-        var bytes = Encoding.UTF8.GetBytes(password);
-        var hash = sha256.ComputeHash(bytes);
+    private const int Iterations = 100_000;
+    private const int SaltSize = 16;
+    private const int KeySize = 32;
 
-        return Convert.ToBase64String(hash);
+    public string Hash(string password)
+    {
+        using var rng = RandomNumberGenerator.Create();
+        var salt = new byte[SaltSize];
+        rng.GetBytes(salt);
+
+        var key = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, HashAlgorithmName.SHA256, KeySize);
+        return $"{Iterations}.{Convert.ToBase64String(salt)}.{Convert.ToBase64String(key)}";
     }
 
-    public static bool Verify(string password, string hashedPassword)
+    public bool Verify(string password, string hash)
     {
-        return Hash(password) == hashedPassword;
+        var parts = hash.Split('.', 3);
+        var iterations = int.Parse(parts[0]);
+        var salt = Convert.FromBase64String(parts[1]);
+        var key = Convert.FromBase64String(parts[2]);
+
+        var incoming = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA256, key.Length);
+        return CryptographicOperations.FixedTimeEquals(incoming, key);
     }
 }

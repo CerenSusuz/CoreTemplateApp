@@ -1,49 +1,36 @@
-﻿using Core.AI.Abstractions;
-using Core.AI.FunctionCalling;
-using Core.AI.Memory;
-using Core.AI.Providers;
-using Core.AI.Providers.Ollama;
-using Core.AI.Providers.OpenRouter;
-using Core.AI.Providers.Profiles;
-using Core.AI.Providers.SemanticKernel;
-using CoreTemplate.AI.UI;
+﻿using CoreTemplate.AI.UI;
+using CoreTemplate.AI.UI.Auth;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using System.Reflection;
+using System.Net.Http.Headers;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// ✅ Named HttpClient
-builder.Services.AddHttpClient("AiApi", client =>
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7059/";
+
+builder.Services.AddAuthorizationCore();
+builder.Services.AddScoped<AuthStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<AuthStateProvider>());
+
+builder.Services.AddScoped<ITokenStore, SessionStorageTokenStore>();
+builder.Services.AddTransient<AuthMessageHandler>();
+
+builder.Services.AddScoped<AuthApi>();
+
+builder.Services.AddHttpClient("AiApi", c =>
 {
-    client.BaseAddress = new Uri("https://localhost:7059/");
+    c.BaseAddress = new Uri(apiBaseUrl);
+    c.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+}).AddHttpMessageHandler<AuthMessageHandler>();
+
+builder.Services.AddHttpClient("AiApiNoAuth", c =>
+{
+    c.BaseAddress = new Uri(apiBaseUrl);
+    c.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
-
-// AI Service setup
-builder.Services.AddScoped<IAIService, AIServiceResolver>();
-
-// Providers
-builder.Services.AddScoped<OllamaAiService>();
-builder.Services.AddScoped<OpenRouterAiService>();
-builder.Services.AddScoped<OllamaModelProvider>();
-builder.Services.AddScoped<OpenRouterModelProvider>();
-builder.Services.AddScoped<AIModelProviderResolver>();
-
-// Agents and Memory
-builder.Services.AddScoped<IAgentService, SemanticKernelAgentService>();
-builder.Services.AddSingleton<ChatHistoryStore>();
-builder.Services.AddSingleton<AgentProfileProvider>();
-
-// Function Calling
-builder.Services.AddScoped<AiFunctionDispatcher>();
-builder.Services.AddSingleton<IFunctionRegistry, InMemoryFunctionRegistry>();
-
-builder.Services.Scan(scan => scan
-    .FromAssemblies(Assembly.GetExecutingAssembly())
-    .AddClasses(c => c.AssignableTo<IAiFunction>())
-    .AsImplementedInterfaces()
-    .WithSingletonLifetime());
 
 await builder.Build().RunAsync();

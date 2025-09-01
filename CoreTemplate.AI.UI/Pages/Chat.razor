@@ -1,5 +1,5 @@
 ﻿@page "/chat"
-@using Core.AI.Models.Agent
+@attribute [Authorize]
 @inject IHttpClientFactory HttpClientFactory
 @inject IJSRuntime JS
 @implements IDisposable
@@ -12,7 +12,7 @@
             </div>
             <span class="badge">live</span>
 
-            <select id="agentSelect" @bind="SelectedAgentId" class="agent-select" title="Profil Seç">
+            <select id="agentSelect" @bind="SelectedAgentId" class="agent-select" title="Select profile">
                 @foreach (var agent in AgentProfiles)
                 {
                     <option value="@agent.Id">@agent.Name</option>
@@ -51,7 +51,8 @@
         </div>
 
         <div class="input-row">
-            <input class="textbox" @bind="UserMessage" @bind:event="oninput" placeholder="Type your message…" @onkeypress="HandleKeyPress" />
+            <input class="textbox" @bind="UserMessage" @bind:event="oninput"
+                   placeholder="Type your message…" @onkeypress="HandleKeyPress" />
             <button class="send" @onclick="SendMessage" disabled="@string.IsNullOrWhiteSpace(UserMessage)">Send</button>
         </div>
     </div>
@@ -65,6 +66,7 @@
 
     private string SelectedAgentId = "";
     private List<AgentProfileItem> AgentProfiles = new();
+    private string? SessionId;
 
     private class AgentProfileItem { public string Id { get; set; } = ""; public string Name { get; set; } = ""; public string? Description { get; set; } }
     private class AiResponse { public string Content { get; set; } = ""; }
@@ -94,10 +96,11 @@
             var client = HttpClientFactory.CreateClient("AiApi");
             AgentProfiles = await client.GetFromJsonAsync<List<AgentProfileItem>>("api/agent/profiles") ?? new();
             SelectedAgentId = AgentProfiles.FirstOrDefault()?.Id ?? "";
+            SessionId = await JS.InvokeAsync<string>("ctai.ensureSessionId");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Profile Load Error] {ex.Message}");
+            Console.WriteLine($"[Init Error] {ex.Message}");
         }
     }
 
@@ -112,9 +115,19 @@
         try
         {
             var client = HttpClientFactory.CreateClient("AiApi");
-            var request = new AiChatRequest { Prompt = UserMessage, AgentId = SelectedAgentId, Provider = "OpenRouter", UseFunctionCalling = false };
-            var response = await client.PostAsJsonAsync("api/ai/chat", request);
-            var content = await response.Content.ReadFromJsonAsync<AiResponse>();
+
+            var body = new AiChatRequest
+            {
+                Prompt = UserMessage,
+                AgentId = SelectedAgentId,
+                Provider = "OpenRouter",
+                UseFunctionCalling = false
+            };
+
+            var res = await client.PostAsJsonAsync("api/ai/chat", body);
+            res.EnsureSuccessStatusCode();
+
+            var content = await res.Content.ReadFromJsonAsync<AiResponse>();
             if (content is not null) Messages.Add(new ChatMessage("assistant", content.Content));
         }
         catch (Exception ex)

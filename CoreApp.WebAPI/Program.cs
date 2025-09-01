@@ -1,171 +1,130 @@
-﻿using Core.AI.Abstractions;
+﻿using System.Reflection;
+using System.Text;
+using System.Text.Json.Serialization;
+using Core.AI;
 using Core.AI.Commands;
-using Core.AI.Config;
-using Core.AI.FunctionCalling;
-using Core.AI.Memory;
-using Core.AI.Providers;
-using Core.AI.Providers.Ollama;
-using Core.AI.Providers.OpenRouter;
-using Core.AI.Providers.Profiles;
-using Core.AI.Providers.SemanticKernel;
+using CoreApp.Application;
 using CoreApp.Application.Common.Behaviors;
+using CoreApp.Application.Common.Interfaces;
 using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Application.Common.Settings;
 using CoreApp.Infrastructure.Data;
+using CoreApp.Infrastructure.Helpers;
 using CoreApp.Infrastructure.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Reflection;
-using System.Text;
-using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------------- Controllers ----------------
+// MVC
 builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
-
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 
-// ---------------- Configuration Binding ----------------
-builder.Services.Configure<AISettings>(builder.Configuration.GetSection("AiSettings"));
-builder.Services.Configure<OllamaSettings>(builder.Configuration.GetSection("Ollama"));
-builder.Services.Configure<OpenRouterSettings>(builder.Configuration.GetSection("OpenRouter"));
+// AI
+builder.Services.AddCoreAi(builder.Configuration);
 
-builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<AISettings>>().Value);
-builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<OllamaSettings>>().Value);
-builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<OpenRouterSettings>>().Value);
+// Db
+builder.Services.AddDbContext<CoreAppDbContext>(opt =>
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ---------------- AI Services ----------------
-builder.Services.AddHttpClient<OllamaAiService>();
-builder.Services.AddScoped<OpenRouterAiService>();
-builder.Services.AddScoped<IAIService, AIServiceResolver>();
-builder.Services.AddSingleton<AgentProfileProvider>();
+// Jwt settings (validate on startup)
+builder.Services.AddOptions<JwtSettings>()
+    .Bind(builder.Configuration.GetSection("JwtSettings"))
+    .Validate(s => !string.IsNullOrWhiteSpace(s.Secret), "Jwt:Secret is required")
+    .Validate(s => !string.IsNullOrWhiteSpace(s.Issuer), "Jwt:Issuer is required")
+    .Validate(s => !string.IsNullOrWhiteSpace(s.Audience), "Jwt:Audience is required")
+    .Validate(s => s.AccessTokenMinutes is >= 5 and <= 120, "AccessTokenMinutes out of range")
+    .Validate(s => s.RefreshTokenDays is >= 1 and <= 30, "RefreshTokenDays out of range")
+    .ValidateOnStart();
 
-// Model Providers
-builder.Services.AddScoped<OllamaModelProvider>();
-builder.Services.AddScoped<OpenRouterModelProvider>();
-builder.Services.AddScoped<AIModelProviderResolver>();
+var jwt = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()
+          ?? throw new InvalidOperationException("JwtSettings missing");
+builder.Services.AddSingleton(jwt);
 
-// Agent Service
-builder.Services.AddScoped<IAgentService, SemanticKernelAgentService>();
-builder.Services.AddSingleton<ChatHistoryStore>();
-builder.Services.AddSingleton<AgentProfileProvider>();
-
-// Function Calling Core
-builder.Services.AddScoped<AiFunctionDispatcher>();
-builder.Services.AddSingleton<IFunctionRegistry, InMemoryFunctionRegistry>();
-
-// Register all IAiFunction implementations automatically
-builder.Services.Scan(scan => scan
-    .FromAssemblies(Assembly.Load("Core.AI"))
-    .AddClasses(c => c.AssignableTo<IAiFunction>())
-    .AsImplementedInterfaces()
-    .WithSingletonLifetime());
-
-// ---------------- Database ----------------
-builder.Services.AddDbContext<CoreAppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// ---------------- Authentication / Authorization ----------------
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
-var jwtSettings = builder.Configuration.GetSection(nameof(JwtSettings)).Get<JwtSettings>();
-builder.Services.AddSingleton(jwtSettings);
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+// Auth
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(o =>
     {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
-        options.TokenValidationParameters = new TokenValidationParameters
+        o.RequireHttpsMetadata = false;
+        o.SaveToken = false;
+        o.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidIssuer = jwtSettings.Issuer,
-            ValidateAudience = true,
-            ValidAudience = jwtSettings.Audience,
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtSettings.Secret))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Secret)),
+            ValidateIssuer = true,
+            ValidIssuer = jwt.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwt.Audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+
+        o.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                var raw = ctx.Request.Headers["Authorization"].ToString();
+                var clean = TokenHelpers.CleanBearer(raw);
+                ctx.Token = clean;
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = ctx =>
+            {
+                Console.WriteLine($"[JWT FAIL] {ctx.Exception.GetType().Name}: {ctx.Exception.Message}");
+                return Task.CompletedTask;
+            }
         };
     });
 
 builder.Services.AddAuthorization();
 
-// ---------------- Application Services ----------------
+// Application + pipeline + validators
+builder.Services.AddApplication();
+
+// Infrastructure services
+builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
-// MediatR
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(Assembly.Load("CoreApp.Application")));
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(PromptTextCommandHandler).Assembly));
+builder.Services.AddHttpContextAccessor();
 
-// FluentValidation
-builder.Services.AddValidatorsFromAssembly(Assembly.Load("CoreApp.Application"));
+builder.Services.AddCors(o =>
+    o.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
-// Pipeline Behaviors
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(UnhandledExceptionBehavior<,>));
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
-// builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
-
-// ---------------- Swagger ----------------
+// Swagger + JWT
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "CoreApp API", Version = "v1" });
-
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
+        Description = "JWT Bearer. Example: Bearer {token}",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
-
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
             },
             Array.Empty<string>()
         }
     });
 });
 
-builder.Services.AddHttpContextAccessor();
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", policyBuilder =>
-    {
-        policyBuilder
-            .AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
-    });
-});
-
-// ---------------- App Pipeline ----------------
 var app = builder.Build();
+IdentityModelEventSource.ShowPII = app.Environment.IsDevelopment();
 
 if (app.Environment.IsDevelopment())
 {
@@ -173,11 +132,33 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Global error handler (ProblemDetails)
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async ctx =>
+    {
+        var ex = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>()?.Error;
+        var (code, title) = ex switch
+        {
+            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
+            InvalidOperationException => (StatusCodes.Status409Conflict, "Conflict"),
+            ArgumentException => (StatusCodes.Status400BadRequest, "Bad Request"),
+            _ => (StatusCodes.Status500InternalServerError, "Server Error")
+        };
+
+        var problem = Results.Problem(
+            title: title,
+            detail: app.Environment.IsDevelopment() ? ex?.ToString() : ex?.Message,
+            statusCode: code);
+
+        await problem.ExecuteAsync(ctx);
+    });
+});
+
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
 app.Run();

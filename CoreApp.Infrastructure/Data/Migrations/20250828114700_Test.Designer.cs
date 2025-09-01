@@ -9,11 +9,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace CoreApp.Infrastructure.Migrations;
+namespace CoreApp.Infrastructure.Data.Migrations;
 
 [DbContext(typeof(CoreAppDbContext))]
-[Migration("20250630105759_InitialCreate")]
-partial class InitialCreate
+[Migration("20250828114700_Test")]
+partial class Test
 {
     /// <inheritdoc />
     protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -37,17 +37,29 @@ partial class InitialCreate
                 b.Property<DateTime>("Expires")
                     .HasColumnType("datetime2");
 
+                b.Property<string>("IpAddress")
+                    .HasColumnType("nvarchar(max)");
+
                 b.Property<bool>("IsRevoked")
                     .ValueGeneratedOnAdd()
                     .HasColumnType("bit")
                     .HasDefaultValue(false);
 
-                b.Property<string>("Token")
+                b.Property<string>("ReplacedByTokenHash")
+                    .HasColumnType("nvarchar(max)");
+
+                b.Property<string>("SessionId")
+                    .HasColumnType("nvarchar(max)");
+
+                b.Property<string>("TokenHash")
                     .IsRequired()
                     .HasColumnType("nvarchar(max)");
 
                 b.Property<DateTime?>("UpdatedAt")
                     .HasColumnType("datetime2");
+
+                b.Property<string>("UserAgent")
+                    .HasColumnType("nvarchar(max)");
 
                 b.Property<Guid>("UserId")
                     .HasColumnType("uniqueidentifier");

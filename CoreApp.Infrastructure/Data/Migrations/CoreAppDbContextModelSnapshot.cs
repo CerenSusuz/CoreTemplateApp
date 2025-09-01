@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace CoreApp.Infrastructure.Migrations;
+namespace CoreApp.Infrastructure.Data.Migrations;
 
 [DbContext(typeof(CoreAppDbContext))]
 partial class CoreAppDbContextModelSnapshot : ModelSnapshot
@@ -34,17 +34,29 @@ partial class CoreAppDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTime>("Expires")
                     .HasColumnType("datetime2");
 
+                b.Property<string>("IpAddress")
+                    .HasColumnType("nvarchar(max)");
+
                 b.Property<bool>("IsRevoked")
                     .ValueGeneratedOnAdd()
                     .HasColumnType("bit")
                     .HasDefaultValue(false);
 
-                b.Property<string>("Token")
+                b.Property<string>("ReplacedByTokenHash")
+                    .HasColumnType("nvarchar(max)");
+
+                b.Property<string>("SessionId")
+                    .HasColumnType("nvarchar(max)");
+
+                b.Property<string>("TokenHash")
                     .IsRequired()
                     .HasColumnType("nvarchar(max)");
 
                 b.Property<DateTime?>("UpdatedAt")
                     .HasColumnType("datetime2");
+
+                b.Property<string>("UserAgent")
+                    .HasColumnType("nvarchar(max)");
 
                 b.Property<Guid>("UserId")
                     .HasColumnType("uniqueidentifier");
