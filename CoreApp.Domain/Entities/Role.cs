@@ -4,7 +4,11 @@ namespace CoreApp.Domain.Entities;
 
 public class Role : BaseEntity
 {
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; private set; } = string.Empty;
 
-    public ICollection<User> Users { get; set; } = new List<User>();
+    private readonly List<User> _users = new();
+    public IReadOnlyCollection<User> Users => _users.AsReadOnly();
+
+    private Role() { }
+    public Role(string name) => Name = name;
 }

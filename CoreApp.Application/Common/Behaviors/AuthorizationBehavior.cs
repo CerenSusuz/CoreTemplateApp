@@ -1,33 +1,19 @@
-﻿using CoreApp.Application.Common.Interfaces.Auth;
+﻿using CoreApp.Application.Common.Interfaces;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 
 namespace CoreApp.Application.Common.Behaviors;
 
-public class AuthorizationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+public interface IRequireAuthenticatedUser { }
+
+public sealed class AuthorizationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ICurrentUser _current;
+    public AuthorizationBehavior(ICurrentUser current) => _current = current;
 
-    public AuthorizationBehavior(IHttpContextAccessor httpContextAccessor)
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken ct)
     {
-        _httpContextAccessor = httpContextAccessor;
-    }
-
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
-    {
-        if (request is not IAuthorizedRequest)
-            return await next();
-
-        var user = _httpContextAccessor.HttpContext?.User;
-
-        if (user == null || !user.Identity?.IsAuthenticated == true)
-        {
-            throw new UnauthorizedAccessException("User is not authenticated");
-        }
+        if (request is IRequireAuthenticatedUser && !_current.IsAuthenticated)
+            throw new UnauthorizedAccessException();
 
         return await next();
     }

@@ -1,9 +1,12 @@
-﻿namespace CoreApp.Application.Common.Settings;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace CoreApp.Application.Common.Settings;
 
 public class JwtSettings
 {
-    public string Secret { get; set; } = string.Empty;
-    public string Issuer { get; set; } = string.Empty;
-    public string Audience { get; set; } = string.Empty;
-    public double ExpirationMinutes { get; set; }
+    [Required] public string Secret { get; set; } = "";
+    [Required] public string Issuer { get; set; } = "";
+    [Required] public string Audience { get; set; } = "";
+    [Range(5, 120)] public int AccessTokenMinutes { get; set; } = 15;
+    [Range(1, 30)] public int RefreshTokenDays { get; set; } = 7;
 }

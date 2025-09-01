@@ -10,7 +10,10 @@ public class AIModelProviderResolver
 {
     private readonly IServiceProvider _provider;
 
-    public AIModelProviderResolver(IServiceProvider provider) => _provider = provider;
+    public AIModelProviderResolver(IServiceProvider provider)
+    {
+        _provider = provider;
+    }
 
     public IAIModelProvider Resolve(AIProvider provider)
     {

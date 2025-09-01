@@ -1,4 +1,5 @@
 ﻿using Core.AI.Config;
+using System.Text.Json.Serialization;
 
 namespace Core.AI.Models;
 
@@ -10,6 +11,8 @@ public class AIRequestOptions
     public int? MaxTokens { get; set; }
     public float? Temperature { get; set; }
     public string? Model { get; set; }
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public AIProvider? Provider { get; set; }
-
+    public bool UseFunctionCalling { get; set; } = true;
+    public string? SystemPrompt { get; set; }
 }

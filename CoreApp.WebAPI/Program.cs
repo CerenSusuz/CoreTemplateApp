@@ -1,186 +1,130 @@
-﻿using Core.AI.Abstractions;
+﻿using System.Reflection;
+using System.Text;
+using System.Text.Json.Serialization;
+using Core.AI;
 using Core.AI.Commands;
-using Core.AI.Config;
-using Core.AI.Memory;
-using Core.AI.Providers;
-using Core.AI.Providers.Ollama;
-using Core.AI.Providers.OpenRouter;
-using Core.AI.Providers.Profiles;
-using Core.AI.Providers.SemanticKernel;
+using CoreApp.Application;
 using CoreApp.Application.Common.Behaviors;
+using CoreApp.Application.Common.Interfaces;
 using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Application.Common.Settings;
 using CoreApp.Infrastructure.Data;
+using CoreApp.Infrastructure.Helpers;
 using CoreApp.Infrastructure.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Reflection;
-using System.Text;
-using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// MVC
 builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
-
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 
-// --- AI Services ---
-builder.Services.AddOptions<AISettings>()
-    .Bind(builder.Configuration.GetSection("AiSettings"))
-    .Validate(settings => Enum.IsDefined(typeof(AIProvider), settings.Provider),
-        "Invalid AI provider configured in AiSettings.Provider");
+// AI
+builder.Services.AddCoreAi(builder.Configuration);
 
-builder.Services.AddSingleton(sp =>
-    sp.GetRequiredService<IOptions<AISettings>>().Value);
+// Db
+builder.Services.AddDbContext<CoreAppDbContext>(opt =>
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Providers
-builder.Services.AddScoped<OpenRouterAiService>();
-builder.Services.AddScoped<OllamaAiService>();
-builder.Services.AddScoped<IAIService, AIServiceResolver>();
+// Jwt settings (validate on startup)
+builder.Services.AddOptions<JwtSettings>()
+    .Bind(builder.Configuration.GetSection("JwtSettings"))
+    .Validate(s => !string.IsNullOrWhiteSpace(s.Secret), "Jwt:Secret is required")
+    .Validate(s => !string.IsNullOrWhiteSpace(s.Issuer), "Jwt:Issuer is required")
+    .Validate(s => !string.IsNullOrWhiteSpace(s.Audience), "Jwt:Audience is required")
+    .Validate(s => s.AccessTokenMinutes is >= 5 and <= 120, "AccessTokenMinutes out of range")
+    .Validate(s => s.RefreshTokenDays is >= 1 and <= 30, "RefreshTokenDays out of range")
+    .ValidateOnStart();
 
-// Model Providers
-builder.Services.AddScoped<OpenRouterModelProvider>();
-builder.Services.AddScoped<OllamaModelProvider>();
-builder.Services.AddScoped<AIModelProviderResolver>();
+var jwt = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()
+          ?? throw new InvalidOperationException("JwtSettings missing");
+builder.Services.AddSingleton(jwt);
 
-// Agent Service
-builder.Services.AddScoped<IAgentService, SemanticKernelAgentService>();
-builder.Services.AddSingleton<ChatHistoryStore>();
-builder.Services.AddSingleton<AgentProfileProvider>();
-
-builder.Configuration
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", optional: true)
-    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
-    .AddUserSecrets<Program>();
-
-// Swagger
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "CoreApp API", Version = "v1" });
-
-    // 🔐 Swagger JWT support
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+// Auth
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(o =>
     {
-        Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-{
-    {
-        new OpenApiSecurityScheme
+        o.RequireHttpsMetadata = false;
+        o.SaveToken = false;
+        o.TokenValidationParameters = new TokenValidationParameters
         {
-            Reference = new OpenApiReference
-            {
-                Type = ReferenceType.SecurityScheme,
-                Id = "Bearer"
-            }
-        },
-        Array.Empty<string>()
-    }
-});
-
-});
-
-builder.Services.AddHttpContextAccessor();
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", builder =>
-    {
-        builder
-            .AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
-    });
-});
-
-// EF Core DbContext (InMemory - dev only)
-//builder.Services.AddDbContext<CoreAppDbContext>(options =>
-//    options.UseInMemoryDatabase("CoreAppDb"));
-
-builder.Services.AddDbContext<CoreAppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Bind JwtSettings from config
-builder.Services.Configure<JwtSettings>(
-    builder.Configuration.GetSection("JwtSettings"));
-
-var jwtSettings = builder.Configuration
-    .GetSection(nameof(JwtSettings))
-    .Get<JwtSettings>();
-
-builder.Services.AddSingleton(jwtSettings);
-
-var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
-Console.WriteLine("[Program.cs] JWT SECRET: " + jwtSettings.Secret);
-Console.WriteLine("[JWT SETTINGS]");
-Console.WriteLine("Issuer: " + jwtSettings.Issuer);
-Console.WriteLine("Audience: " + jwtSettings.Audience);
-Console.WriteLine("Secret: " + jwtSettings.Secret);
-
-// 🔐 JWT Authentication
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = jwtSettings.Issuer,
-
-            ValidateAudience = true,
-            ValidAudience = jwtSettings.Audience,
-
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero,
-
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtSettings.Secret))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Secret)),
+            ValidateIssuer = true,
+            ValidIssuer = jwt.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwt.Audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+
+        o.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                var raw = ctx.Request.Headers["Authorization"].ToString();
+                var clean = TokenHelpers.CleanBearer(raw);
+                ctx.Token = clean;
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = ctx =>
+            {
+                Console.WriteLine($"[JWT FAIL] {ctx.Exception.GetType().Name}: {ctx.Exception.Message}");
+                return Task.CompletedTask;
+            }
         };
     });
 
 builder.Services.AddAuthorization();
 
-// Auth Service
+// Application + pipeline + validators
+builder.Services.AddApplication();
+
+// Infrastructure services
+builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
-// MediatR
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(Assembly.Load("CoreApp.Application")));
+builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddCors(o =>
+    o.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+
+// Swagger + JWT
+builder.Services.AddSwaggerGen(c =>
 {
-    cfg.RegisterServicesFromAssembly(typeof(PromptTextCommandHandler).Assembly);
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "CoreApp API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Bearer. Example: Bearer {token}",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
-// FluentValidation
-builder.Services.AddValidatorsFromAssembly(Assembly.Load("CoreApp.Application"));
-
-// Pipeline Behaviors
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(UnhandledExceptionBehavior<,>));
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
-// builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
-
 var app = builder.Build();
+IdentityModelEventSource.ShowPII = app.Environment.IsDevelopment();
 
 if (app.Environment.IsDevelopment())
 {
@@ -188,14 +132,33 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Global error handler (ProblemDetails)
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async ctx =>
+    {
+        var ex = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>()?.Error;
+        var (code, title) = ex switch
+        {
+            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
+            InvalidOperationException => (StatusCodes.Status409Conflict, "Conflict"),
+            ArgumentException => (StatusCodes.Status400BadRequest, "Bad Request"),
+            _ => (StatusCodes.Status500InternalServerError, "Server Error")
+        };
 
+        var problem = Results.Problem(
+            title: title,
+            detail: app.Environment.IsDevelopment() ? ex?.ToString() : ex?.Message,
+            statusCode: code);
+
+        await problem.ExecuteAsync(ctx);
+    });
+});
+
+app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors("AllowAll");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

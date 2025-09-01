@@ -1,4 +1,4 @@
-﻿using CoreApp.Application.Features.Auth.DTOs;
+﻿using CoreApp.Shared.Auth.DTOs;
 using MediatR;
 
 namespace CoreApp.Application.Features.Auth.Commands.Login;
