@@ -1,7 +1,7 @@
 ﻿using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Domain.Entities;
 using CoreApp.Infrastructure.Data;
-using CoreApp.Infrastructure.Helpers;
+using CoreApp.Shared.Auth;
 using CoreApp.Shared.Auth.DTOs;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,7 +55,7 @@ public class AuthService : IAuthService
 
         token.IsRevoked = true;
         var resp = await IssueAsync(token.User!, sessionId, ip, ua);
-        token.ReplacedByTokenHash = Infrastructure.Helpers.TokenHelpers.Sha256Base64Url(resp.RefreshToken);
+        token.ReplacedByTokenHash = TokenHelpers.Sha256Base64Url(resp.RefreshToken);
         await _ctx.SaveChangesAsync();
 
         return resp;

@@ -5,7 +5,7 @@ using System.Text;
 using CoreApp.Application.Common.Interfaces.Auth;
 using CoreApp.Application.Common.Settings;
 using CoreApp.Domain.Entities;
-using CoreApp.Infrastructure.Helpers;
+using CoreApp.Shared.Auth;
 using Microsoft.IdentityModel.Tokens;
 
 namespace CoreApp.Infrastructure.Services;

@@ -1,5 +1,4 @@
 ﻿using CoreApp.Application.Common.Behaviors;
-using CoreApp.Application.Common.Behavisors;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;

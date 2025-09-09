@@ -1,35 +1,45 @@
 ﻿using Core.AI.Abstractions;
 using Core.AI.Config;
+using Core.AI.Models;
 using Microsoft.Extensions.Options;
 
 namespace Core.AI.Services;
 
 public class AiCatalogService : IAiCatalogService
 {
-    private readonly AiCatalogOptions _catalog;
+    private readonly List<AIModel> _models;
     private readonly AISettings _aiSettings;
 
     public AiCatalogService(IOptions<AiCatalogOptions> catalog, AISettings aiSettings)
     {
-        _catalog = catalog.Value;
+        _models = catalog.Value.Models ?? new();
         _aiSettings = aiSettings;
     }
 
     public string GetDefaultProvider()
     {
-        var p = _aiSettings.Provider;
-
-        return Enum.IsDefined(typeof(AIProvider), p) ? p.ToString() : "OpenRouter";
+        return _models.FirstOrDefault(m => m.IsDefault)?.Provider
+            ?? _aiSettings.Provider?.ToString()
+            ?? "OpenRouter";
     }
 
-    public string GetDefaultModel() => _aiSettings.Model ?? "mistralai/mistral-small-3.2-24b-instruct:free";
+    public string GetDefaultModel()
+    {
+        return _models.FirstOrDefault(m => m.IsDefault)?.Name
+            ?? _aiSettings.Model
+            ?? "mistralai/mistral-small-3.2-24b-instruct:free";
+    }
 
     public IEnumerable<string> GetProviders()
-        => _catalog.Providers.Keys;
+        => _models.Select(m => m.Provider).Distinct();
 
     public IEnumerable<string> GetModels(string provider)
-    {
-        if (string.IsNullOrWhiteSpace(provider)) return Enumerable.Empty<string>();
-        return _catalog.Providers.TryGetValue(provider, out var list) ? list : Array.Empty<string>();
-    }
+        => _models
+            .Where(m => m.Provider.Equals(provider, StringComparison.OrdinalIgnoreCase))
+            .Select(m => m.Name);
+
+    public bool IsValidModel(string provider, string model)
+        => _models.Any(m =>
+            m.Provider.Equals(provider, StringComparison.OrdinalIgnoreCase) &&
+            m.Name.Equals(model, StringComparison.OrdinalIgnoreCase));
 }

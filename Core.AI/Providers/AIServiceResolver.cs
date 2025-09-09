@@ -4,6 +4,7 @@ using Core.AI.Models;
 using Core.AI.Providers.Ollama;
 using Core.AI.Providers.OpenRouter;
 using Microsoft.Extensions.Options;
+using System.Threading;
 
 namespace Core.AI.Providers;
 
@@ -23,8 +24,8 @@ public class AIServiceResolver(IOptions<AISettings> settings, OpenRouterAiServic
         };
     }
 
-    public Task<string> PromptAsync(string prompt, AIRequestOptions? options = null)
-        => Resolve(options?.Provider).PromptAsync(prompt, options);
+    public Task<string> PromptAsync(string prompt, AIRequestOptions? options = null, CancellationToken cancellationToken = default)
+        => Resolve(options?.Provider).PromptAsync(prompt, options, cancellationToken);
 
     public IAsyncEnumerable<string> StreamPromptAsync(string prompt, AIRequestOptions? options = null, CancellationToken cancellationToken = default)
         => Resolve(options?.Provider).StreamPromptAsync(prompt, options, cancellationToken);

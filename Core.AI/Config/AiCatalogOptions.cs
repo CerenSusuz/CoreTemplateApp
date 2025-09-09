@@ -1,6 +1,8 @@
-﻿namespace Core.AI.Config;
+﻿using Core.AI.Models;
+
+namespace Core.AI.Config;
 
 public class AiCatalogOptions
 {
-    public Dictionary<string, string[]> Providers { get; set; } = new();
+    public List<AIModel> Models { get; set; } = new();
 }

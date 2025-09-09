@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace CoreApp.Infrastructure.Helpers;
+namespace CoreApp.Shared.Auth;
 
 public static class TokenHelpers
 {

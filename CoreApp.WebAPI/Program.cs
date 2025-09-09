@@ -11,6 +11,7 @@ using CoreApp.Application.Common.Settings;
 using CoreApp.Infrastructure.Data;
 using CoreApp.Infrastructure.Helpers;
 using CoreApp.Infrastructure.Services;
+using CoreApp.Shared.Auth;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

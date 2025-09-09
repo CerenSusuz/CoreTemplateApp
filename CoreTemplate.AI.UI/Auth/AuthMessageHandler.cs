@@ -1,5 +1,4 @@
-﻿using CoreApp.Infrastructure.Helpers;
-using CoreApp.Shared.Auth;
+﻿using CoreApp.Shared.Auth;
 using CoreApp.Shared.Auth.DTOs;
 using CoreTemplate.AI.UI.Auth;
 using Microsoft.AspNetCore.Components;

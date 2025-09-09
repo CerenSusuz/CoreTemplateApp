@@ -2,5 +2,9 @@
 public enum AIProvider
 {
     OpenRouter,
-    Ollama
+    Ollama,
+    AzureOpenAI,
+    OpenAI,
+    Custom,
+    HuggingFace
 }

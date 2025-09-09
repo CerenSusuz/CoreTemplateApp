@@ -6,4 +6,5 @@ public interface IAiCatalogService
     string GetDefaultModel();
     IEnumerable<string> GetProviders();
     IEnumerable<string> GetModels(string provider);
+    bool IsValidModel(string provider, string model);
 }

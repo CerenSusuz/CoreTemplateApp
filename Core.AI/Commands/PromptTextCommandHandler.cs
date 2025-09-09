@@ -6,8 +6,22 @@ public class PromptTextCommandHandler : IRequestHandler<PromptTextCommand, strin
 {
     private readonly IAIService _aiService;
 
-    public PromptTextCommandHandler(IAIService aiService) => _aiService = aiService;
+    public PromptTextCommandHandler(IAIService aiService)
+    {
+        _aiService = aiService;
+    }
 
     public async Task<string> Handle(PromptTextCommand request, CancellationToken cancellationToken)
-    => await _aiService.PromptAsync(request.Prompt, request.Options);
+    {
+        if (string.IsNullOrWhiteSpace(request.Prompt))
+            throw new ArgumentException("Prompt cannot be empty.");
+
+        var result = await _aiService.PromptAsync(
+            request.Prompt,
+            request.Options,
+            cancellationToken
+        );
+
+        return result;
+    }
 }
